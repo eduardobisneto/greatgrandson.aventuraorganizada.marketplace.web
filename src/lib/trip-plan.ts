@@ -40,12 +40,56 @@ export interface OpcaoResposta {
   label: string;
 }
 
+/**
+ * Espelha o enum EtapaPlanoViagem da viagens.api (o mesmo que aparece no
+ * Kanban do backoffice em /viagens) — só nos rótulos. O marketplace.web
+ * continua 100% mockado em localStorage, sem chamar a viagens.api de
+ * verdade; isso aqui existe só pra narrar a mesma história de etapas pro
+ * cliente, dentro da conversa da etapa 5, conforme ele avança.
+ */
+export enum EtapaPlanoViagem {
+  Recebido = 0,
+  EmAnalise = 1,
+  DestinosConfirmados = 2,
+  ExperienciasDefinidas = 3,
+  MobilidadeDefinida = 4,
+  HospedagemDefinida = 5,
+  AlimentacaoDefinida = 6,
+  PropostaMontada = 7,
+  PropostaEnviada = 8,
+  Aprovada = 9,
+  Recusada = 10,
+  Fechada = 11,
+}
+
+export const ETAPA_LABELS: Record<EtapaPlanoViagem, string> = {
+  [EtapaPlanoViagem.Recebido]: "Recebido",
+  [EtapaPlanoViagem.EmAnalise]: "Em análise",
+  [EtapaPlanoViagem.DestinosConfirmados]: "Destinos confirmados",
+  [EtapaPlanoViagem.ExperienciasDefinidas]: "Experiências definidas",
+  [EtapaPlanoViagem.MobilidadeDefinida]: "Mobilidade definida",
+  [EtapaPlanoViagem.HospedagemDefinida]: "Hospedagem definida",
+  [EtapaPlanoViagem.AlimentacaoDefinida]: "Alimentação definida",
+  [EtapaPlanoViagem.PropostaMontada]: "Proposta montada",
+  [EtapaPlanoViagem.PropostaEnviada]: "Proposta enviada",
+  [EtapaPlanoViagem.Aprovada]: "Aprovada",
+  [EtapaPlanoViagem.Recusada]: "Recusada",
+  [EtapaPlanoViagem.Fechada]: "Fechada",
+};
+
 export interface Interacao {
   id: string;
   autor: "usuario" | "analista";
   texto: string;
   criadoEm: string;
-  tipo?: "mensagem" | "sugestao" | "plano_pronto" | "pacote_pronto";
+  tipo?:
+    | "mensagem"
+    | "sugestao"
+    | "plano_pronto"
+    | "pacote_pronto"
+    | "mudanca_etapa";
+  /** Só existe quando tipo === "mudanca_etapa" — renderizado como divisor na timeline, não como balão de chat. */
+  etapa?: EtapaPlanoViagem | undefined;
   sugestaoStatus?: "pendente" | "aceita" | "recusada";
   /** Categoria da sugestão (voo, transfer, acomodação...) — ajuda a agrupar/filtrar no backoffice. */
   categoria?: CategoriaSugestao | undefined;
@@ -278,7 +322,46 @@ export function onPedirListaDeViagens(callback: () => void): () => void {
 }
 
 function horasDepois(base: string, horas: number): string {
-  return new Date(new Date(base).getTime() + horas * 60 * 60 * 1000).toISOString();
+  return new Date(
+    new Date(base).getTime() + horas * 60 * 60 * 1000,
+  ).toISOString();
+}
+
+/** Cada categoria de sugestão "completa" uma etapa do pipeline quando a primeira daquele tipo é revelada. */
+const CATEGORIA_PARA_ETAPA: Partial<Record<CategoriaSugestao, EtapaPlanoViagem>> = {
+  passeio: EtapaPlanoViagem.ExperienciasDefinidas,
+  voo: EtapaPlanoViagem.MobilidadeDefinida,
+  transfer: EtapaPlanoViagem.MobilidadeDefinida,
+  acomodacao: EtapaPlanoViagem.HospedagemDefinida,
+  refeicao: EtapaPlanoViagem.AlimentacaoDefinida,
+};
+
+function maiorEtapaEm(interacoes: Interacao[]): EtapaPlanoViagem {
+  const etapas = interacoes
+    .filter(
+      (i): i is Interacao & { etapa: EtapaPlanoViagem } =>
+        i.tipo === "mudanca_etapa" && i.etapa !== undefined,
+    )
+    .map((i) => i.etapa);
+  return etapas.length > 0
+    ? etapas.reduce((a, b) => (b > a ? b : a))
+    : EtapaPlanoViagem.Recebido;
+}
+
+/** Etapa atual do plano (a mais avançada já narrada na conversa) — pra exibir o mesmo rótulo do Kanban do backoffice em qualquer resumo do plano. */
+export function etapaAtualDoPlano(plano: PlanoViagem): EtapaPlanoViagem {
+  return maiorEtapaEm(plano.interacoes ?? []);
+}
+
+function marcadorEtapa(etapa: EtapaPlanoViagem, criadoEm: string): Interacao {
+  return {
+    id: crypto.randomUUID(),
+    autor: "analista",
+    criadoEm,
+    tipo: "mudanca_etapa",
+    etapa,
+    texto: ETAPA_LABELS[etapa],
+  };
 }
 
 function calcularValorPacote(selecoes: SelecaoDestino[]): number {
@@ -655,6 +738,7 @@ export function salvarPlanoViagem(
   // `confirmarPagamentoSinal`) é que a primeira sugestão (a hospedagem) é
   // revelada pra fila `filaSugestoes` inteira.
   const interacoes: Interacao[] = [
+    marcadorEtapa(EtapaPlanoViagem.Recebido, agora),
     {
       id: crypto.randomUUID(),
       autor: "usuario",
@@ -662,6 +746,7 @@ export function salvarPlanoViagem(
       criadoEm: agora,
       tipo: "mensagem",
     },
+    marcadorEtapa(EtapaPlanoViagem.EmAnalise, horasDepois(agora, 2.5)),
     {
       id: crypto.randomUUID(),
       autor: "analista",
@@ -669,6 +754,10 @@ export function salvarPlanoViagem(
       criadoEm: horasDepois(agora, 3),
       tipo: "mensagem",
     },
+    marcadorEtapa(
+      EtapaPlanoViagem.DestinosConfirmados,
+      horasDepois(agora, 4.5),
+    ),
     {
       id: crypto.randomUUID(),
       autor: "analista",
@@ -792,9 +881,25 @@ function revelarProximaSugestao(
           ),
         }
       : undefined;
+
+    // A primeira sugestão de cada categoria (voo/transfer, acomodação,
+    // refeição, passeio) "conclui" a etapa correspondente do pipeline —
+    // mesma história que o analista vê no Kanban do backoffice.
+    const etapaDaCategoria = proximaSugestao.categoria
+      ? CATEGORIA_PARA_ETAPA[proximaSugestao.categoria]
+      : undefined;
+    const comMarcador =
+      etapaDaCategoria !== undefined &&
+      etapaDaCategoria > maiorEtapaEm(interacoes)
+        ? [
+            ...interacoes,
+            marcadorEtapa(etapaDaCategoria, new Date().toISOString()),
+          ]
+        : interacoes;
+
     return {
       interacoes: [
-        ...interacoes,
+        ...comMarcador,
         {
           id: crypto.randomUUID(),
           autor: "analista",
@@ -817,9 +922,20 @@ function revelarProximaSugestao(
     return { interacoes, filaSugestoes };
   }
 
+  const comMarcadorDeProposta =
+    maiorEtapaEm(interacoes) < EtapaPlanoViagem.PropostaEnviada
+      ? [
+          ...interacoes,
+          marcadorEtapa(
+            EtapaPlanoViagem.PropostaEnviada,
+            new Date().toISOString(),
+          ),
+        ]
+      : interacoes;
+
   return {
     interacoes: [
-      ...interacoes,
+      ...comMarcadorDeProposta,
       {
         id: crypto.randomUUID(),
         autor: "analista",
@@ -1115,7 +1231,23 @@ export function confirmarRevisaoDoPacote(planoId: string): PlanoViagem | null {
   if (index === -1) return null;
 
   const atual = planos[index]!;
-  const atualizado: PlanoViagem = { ...atual, pacoteRevisado: true };
+  const agora = new Date().toISOString();
+  const interacoes = [
+    ...(atual.interacoes ?? []),
+    marcadorEtapa(EtapaPlanoViagem.Aprovada, agora),
+    {
+      id: crypto.randomUUID(),
+      autor: "usuario" as const,
+      criadoEm: agora,
+      tipo: "mensagem" as const,
+      texto: "Revisei tudo, pode fechar a viagem!",
+    },
+  ];
+  const atualizado: PlanoViagem = {
+    ...atual,
+    pacoteRevisado: true,
+    interacoes,
+  };
   planos[index] = atualizado;
   window.localStorage.setItem(PLANOS_KEY, JSON.stringify(planos));
   window.dispatchEvent(new Event(PLANOS_ATUALIZADOS_EVENT));
@@ -1142,6 +1274,7 @@ export function fecharPacote(
   // pagamento simplesmente "sumir" sem deixar rastro na conversa.
   const interacoes = [
     ...(atual.interacoes ?? []),
+    marcadorEtapa(EtapaPlanoViagem.Fechada, new Date().toISOString()),
     {
       id: crypto.randomUUID(),
       autor: "usuario" as const,
