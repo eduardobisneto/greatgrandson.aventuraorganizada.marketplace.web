@@ -17,29 +17,44 @@ bun run dev
 bun run build
 ```
 
+## Portas
+
+Esquema fixo em todo repositório da Aventura Organizada (host:container),
+pra nunca colidir quando mais de um serviço sobe ao mesmo tempo:
+
+| Serviço | Porta |
+| --- | --- |
+| identity.api | 5000:8080 |
+| marketplace.api | 5001:8080 |
+| viagens.api | 5002:8080 |
+| financeiro.api | 5003:8080 |
+| **marketplace.web** (este repo) | **3000:3000** |
+| backoffice.web | 3001:3000 |
+
 ## Docker
 
-`docker compose up` aqui sobe a **stack completa** (marketplace.web +
-backoffice.web + marketplace.api + identity.api + viagens.api) — requer
-os outros 4 repositórios clonados como pastas irmãs desta (ver comentário
-no topo do `docker-compose.yml`) e um Postgres já rodando no host com os
-bancos criados (ver scripts em cada API).
+Dois arquivos aqui:
 
-```sh
-cp .env.example .env
-docker compose build --no-cache
-docker compose up
-```
+- **`docker-compose.yml`** — só este serviço, isolado, na porta 3000.
+  100% mockado (localStorage), não depende de nenhuma API rodando.
 
-| Serviço | Porta host | Container |
-| --- | --- | --- |
-| marketplace.web (este repo) | `3000` | `3000` |
-| backoffice.web | `3001` | `3000` |
-| marketplace.api | `5001` | `8080` |
-| viagens.api | `5002` | `8080` |
-| identity.api | `5000` | `8080` |
+  ```sh
+  docker compose up --build
+  ```
 
-Para subir só este serviço isoladamente (sem as APIs/backoffice):
+- **`docker-compose.stack.yml`** — a **stack completa** (marketplace.web
+  + backoffice.web + marketplace.api + identity.api + viagens.api +
+  financeiro.api). Requer os outros 5 repositórios clonados como pastas
+  irmãs desta (ver comentário no topo do arquivo) e um Postgres já
+  rodando no host com os bancos criados (ver scripts em cada API).
+
+  ```sh
+  cp .env.example .env
+  docker compose -f docker-compose.stack.yml build --no-cache
+  docker compose -f docker-compose.stack.yml up
+  ```
+
+Sem compose, equivalente na mão pra só este serviço:
 
 ```sh
 docker build -t greatgrandson-aventuraorganizada-marketplace-web .

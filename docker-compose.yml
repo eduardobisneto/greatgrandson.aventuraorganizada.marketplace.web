@@ -1,22 +1,14 @@
-# Stack completa da Aventura Organizada.
+# Sobe só o marketplace.web isolado — porta 3000 (ver README, seção
+# "Portas", para o esquema completo da Aventura Organizada). 100%
+# mockado (localStorage), não depende de nenhuma API rodando.
 #
-# Requer os outros 4 repositórios clonados como pastas irmãs desta (mesmo
-# diretório pai), com esses nomes exatos:
-#   ../greatgrandson.aventuraorganizada.backoffice.web
-#   ../greatgrandson.aventuraorganizada.marketplace.api
-#   ../greatgrandson.aventuraorganizada.identity.api
-#   ../greatgrandson.aventuraorganizada.viagens.api
-#
-# As 3 APIs .NET esperam um Postgres já existente com os bancos/usuários
-# criados (ver scripts/00-setup.sql e scripts/create.sql em cada uma) —
-# não um serviço "postgres" deste compose. Por padrão apontam para
-# host.docker.internal (o Postgres rodando no host, ex: via Docker
-# Desktop/pgAdmin). Ajuste POSTGRES_HOST no .env se for diferente.
-#
-# Copie .env.example para .env antes de subir:
+# Pra rodar a stack inteira junto (as 4 APIs + o backoffice.web), use o
+# docker-compose.stack.yml deste mesmo repositório:
 #   cp .env.example .env
-#   docker compose build --no-cache
-#   docker compose up
+#   docker compose -f docker-compose.stack.yml build --no-cache
+#   docker compose -f docker-compose.stack.yml up
+#
+# docker compose up --build
 
 services:
   greatgrandson-aventuraorganizada-marketplace-web:
