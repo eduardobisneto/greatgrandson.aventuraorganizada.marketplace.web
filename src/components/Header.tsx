@@ -3,6 +3,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
+  Receipt,
   User,
   UserCircle,
   X,
@@ -62,7 +63,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur print:hidden">
       <div className="container-tight flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-foreground">
           <Mountain className="h-6 w-6 text-primary" />
@@ -90,6 +91,7 @@ export function Header() {
           })}
           <Link
             to="/planejar-viagem"
+            search={{ planoId: undefined, step: undefined }}
             onClick={() => {
               if (temViagens) pedirListaDeViagens();
             }}
@@ -129,6 +131,14 @@ export function Header() {
                       >
                         <UserCircle className="h-4 w-4 text-primary" />
                         Editar perfil
+                      </Link>
+                      <Link
+                        to="/pagamentos"
+                        onClick={() => setPerfilOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                      >
+                        <Receipt className="h-4 w-4 text-primary" />
+                        Pagamentos
                       </Link>
                       <button
                         type="button"
@@ -183,6 +193,7 @@ export function Header() {
             ))}
             <Link
               to="/planejar-viagem"
+              search={{ planoId: undefined, step: undefined }}
               onClick={() => {
                 setMobileOpen(false);
                 if (temViagens) pedirListaDeViagens();
@@ -203,6 +214,14 @@ export function Header() {
                     >
                       <UserCircle className="h-4 w-4" />
                       Editar perfil
+                    </Link>
+                    <Link
+                      to="/pagamentos"
+                      onClick={() => setMobileOpen(false)}
+                      className="inline-flex items-center gap-2 text-base font-medium uppercase tracking-wide text-foreground"
+                    >
+                      <Receipt className="h-4 w-4" />
+                      Pagamentos
                     </Link>
                     <button
                       type="button"

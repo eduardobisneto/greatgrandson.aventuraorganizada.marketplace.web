@@ -66,6 +66,7 @@ export function Hero() {
             </Link>
             <Link
               to="/planejar-viagem"
+              search={{ planoId: undefined, step: undefined }}
               className="inline-flex items-center gap-2 rounded-full border border-sand-50/30 bg-sand-50/10 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-sand-50 backdrop-blur-sm transition-all hover:bg-sand-50/20"
             >
               Planejar minha viagem

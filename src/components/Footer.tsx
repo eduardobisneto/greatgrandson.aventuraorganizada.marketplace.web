@@ -3,7 +3,7 @@ import { Mountain, Instagram, Phone, Mail } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 bg-forest-900 text-forest-100">
+    <footer className="border-t border-border/50 bg-forest-900 text-forest-100 print:hidden">
       <div className="container-tight py-12 md:py-16">
         <div className="grid gap-12 md:grid-cols-3">
           <div className="space-y-4">

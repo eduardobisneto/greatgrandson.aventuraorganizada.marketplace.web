@@ -1,0 +1,130 @@
+# Stack completa da Aventura Organizada — todos os serviços juntos.
+#
+# Requer os outros 5 repositórios clonados como pastas irmãs desta (mesmo
+# diretório pai), com esses nomes exatos:
+#   ../greatgrandson.aventuraorganizada.backoffice.web
+#   ../greatgrandson.aventuraorganizada.marketplace.api
+#   ../greatgrandson.aventuraorganizada.identity.api
+#   ../greatgrandson.aventuraorganizada.viagens.api
+#   ../greatgrandson.aventuraorganizada.financeiro.api
+#
+# Esquema de portas (host:container) — o mesmo em todo repositório, ver
+# README, seção "Portas":
+#   identity.api      5000:8080
+#   marketplace.api   5001:8080
+#   viagens.api       5002:8080
+#   financeiro.api    5003:8080
+#   marketplace.web   3000:3000
+#   backoffice.web    3001:3000
+#
+# As 4 APIs .NET esperam um Postgres já existente com os bancos/usuários
+# criados (ver scripts/00-setup.sql e scripts/create.sql em cada uma) —
+# não um serviço "postgres" deste compose. Por padrão apontam para
+# host.docker.internal (o Postgres rodando no host, ex: via Docker
+# Desktop/pgAdmin). Ajuste POSTGRES_HOST no .env se for diferente.
+#
+# Copie .env.example para .env antes de subir:
+#   cp .env.example .env
+#   docker compose -f docker-compose.stack.yml up --build
+#
+# Pra subir só este web isolado (sem as APIs), use o docker-compose.yml
+# (sem sufixo) deste mesmo repositório.
+
+services:
+  greatgrandson-aventuraorganizada-identity-api:
+    build:
+      context: ../greatgrandson.aventuraorganizada.identity.api
+    image: greatgrandson-aventuraorganizada-identity-api
+    container_name: greatgrandson-aventuraorganizada-identity-api-container
+    environment:
+      CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=aventuraorganizada-identity;Username=aventuraorganizada-identity;Password=${POSTGRES_PASSWORD}"
+      COGNITO_REGION: ${COGNITO_REGION}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5000:8080"
+    restart: unless-stopped
+
+  greatgrandson-aventuraorganizada-viagens-api:
+    build:
+      context: ../greatgrandson.aventuraorganizada.viagens.api
+    image: greatgrandson-aventuraorganizada-viagens-api
+    container_name: greatgrandson-aventuraorganizada-viagens-api-container
+    environment:
+      CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=aventuraorganizada-viagem;Username=aventuraorganizada-viagem;Password=${POSTGRES_PASSWORD}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5002:8080"
+    restart: unless-stopped
+
+  greatgrandson-aventuraorganizada-marketplace-api:
+    build:
+      context: ../greatgrandson.aventuraorganizada.marketplace.api
+    image: greatgrandson-aventuraorganizada-marketplace-api
+    container_name: greatgrandson-aventuraorganizada-marketplace-api-container
+    environment:
+      CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=aventuraorganizada-marketplace;Username=aventuraorganizada-marketplace;Password=${POSTGRES_PASSWORD}"
+      # Nomes de serviço do compose = hostname interno (DNS do Docker); porta
+      # 8080 é onde as APIs .NET escutam (ver ASPNETCORE_HTTP_PORTS nos Dockerfiles).
+      IDENTITY_API_URL: "http://greatgrandson-aventuraorganizada-identity-api:8080"
+      VIAGENS_API_URL: "http://greatgrandson-aventuraorganizada-viagens-api:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5001:8080"
+    depends_on:
+      - greatgrandson-aventuraorganizada-identity-api
+      - greatgrandson-aventuraorganizada-viagens-api
+    restart: unless-stopped
+
+  greatgrandson-aventuraorganizada-financeiro-api:
+    build:
+      context: ../greatgrandson.aventuraorganizada.financeiro.api
+    image: greatgrandson-aventuraorganizada-financeiro-api
+    container_name: greatgrandson-aventuraorganizada-financeiro-api-container
+    environment:
+      CONNECTION_STRING: "Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=aventuraorganizada-financeiro;Username=aventuraorganizada-financeiro;Password=${POSTGRES_PASSWORD}"
+      VIAGENS_API_URL: "http://greatgrandson-aventuraorganizada-viagens-api:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5003:8080"
+    depends_on:
+      - greatgrandson-aventuraorganizada-viagens-api
+    restart: unless-stopped
+
+  greatgrandson-aventuraorganizada-marketplace-web:
+    build: .
+    image: greatgrandson-aventuraorganizada-marketplace-web
+    container_name: greatgrandson-aventuraorganizada-marketplace-web-container
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  greatgrandson-aventuraorganizada-backoffice-web:
+    build:
+      context: ../greatgrandson.aventuraorganizada.backoffice.web
+      args:
+        # Alcançadas pelo navegador do analista, não pelo container — por
+        # isso são as portas publicadas no host (5001/5002/5003), não os
+        # hostnames internos do Docker. Vite inlina isso no build; ver
+        # README do backoffice.web.
+        VITE_MARKETPLACE_API_URL: http://localhost:5001
+        VITE_VIAGENS_API_URL: http://localhost:5002
+        VITE_FINANCEIRO_API_URL: http://localhost:5003
+    image: greatgrandson-aventuraorganizada-backoffice-web
+    container_name: greatgrandson-aventuraorganizada-backoffice-web-container
+    ports:
+      - "3001:3000"
+    depends_on:
+      - greatgrandson-aventuraorganizada-marketplace-api
+      - greatgrandson-aventuraorganizada-viagens-api
+      - greatgrandson-aventuraorganizada-financeiro-api
+    restart: unless-stopped
