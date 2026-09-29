@@ -30,6 +30,9 @@ import {
   adicionarInteracao,
   confirmarPagamentoSinal,
   confirmarRevisaoDoPacote,
+  etapaAtualDoPlano,
+  ETAPA_LABELS,
+  EtapaPlanoViagem,
   fecharPacote,
   getPlanosDoUsuario,
   noitesEntre,
@@ -1398,19 +1401,9 @@ function ListaPlanosView({
                     </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
-                      plano.pacoteFechado
-                        ? "bg-green-100 text-green-900"
-                        : plano.pacoteRevisado
-                          ? "bg-blue-100 text-blue-900"
-                          : "bg-amber-100 text-amber-900"
-                    }`}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(plano))}`}
                   >
-                    {plano.pacoteFechado
-                      ? "Contrato fechado"
-                      : plano.pacoteRevisado
-                        ? "Aguardando pagamento"
-                        : "Em análise"}
+                    {ETAPA_LABELS[etapaAtualDoPlano(plano)]}
                   </span>
                 </button>
               );
@@ -1521,6 +1514,15 @@ const CONSULTA_STEP_LABELS: Record<ConsultaStep, string> = {
   pagamento: "8. Pagamento",
   fechado: "9. Contratação fechada",
 };
+
+/** Mesma leitura de cor por fase usada no Kanban do backoffice: em andamento (âmbar), proposta/aprovação (azul), fechado (verde), recusado (vermelho). */
+function corDaEtapa(etapa: EtapaPlanoViagem): string {
+  if (etapa === EtapaPlanoViagem.Fechada) return "bg-green-100 text-green-900";
+  if (etapa === EtapaPlanoViagem.Recusada) return "bg-red-100 text-red-900";
+  if (etapa >= EtapaPlanoViagem.PropostaMontada)
+    return "bg-blue-100 text-blue-900";
+  return "bg-amber-100 text-amber-900";
+}
 
 function DetalhePlanoView({
   plano,
@@ -1652,18 +1654,41 @@ function DetalhePlanoView({
     }
   }
 
-  function renderItensDoDia(itens: PlanoViagem["itinerario"]) {
+  /**
+   * Mesma linguagem visual da conversa da etapa 5 (avatar + linha
+   * conectora + cabeçalho + corpo) — a programação é uma continuação da
+   * mesma conversa, só que contando cada atividade confirmada em vez de
+   * mensagens de texto.
+   */
+  function renderItensDoDia(itens: PlanoViagem["itinerario"], dia: number) {
     const ordenados = [...itens].sort((a, b) =>
       a.horario.localeCompare(b.horario),
     );
     return (
       <div>
+        <div className="flex gap-4">
+          <div className="flex flex-col items-center">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary">
+              <User className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="mt-1 w-0.5 flex-1 bg-border" />
+          </div>
+          <div className="flex-1 pb-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Analista da Aventura Organizada
+            </p>
+            <p className="mt-1.5 text-sm text-foreground">
+              Programação confirmada para o dia {dia}:
+            </p>
+          </div>
+        </div>
+
         {ordenados.map((item, index) => {
           const isUltimo = index === ordenados.length - 1;
           return (
             <div key={item.id} className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-primary/30">
+                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-primary/30">
                   <img
                     src={item.imagem}
                     alt={item.local}
@@ -2068,7 +2093,9 @@ function DetalhePlanoView({
                 Dia {diaAtivo}
               </p>
 
-              <div className="mt-4">{renderItensDoDia(itensDoDia)}</div>
+              <div className="mt-4">
+                {renderItensDoDia(itensDoDia, diaAtivo)}
+              </div>
             </div>
           );
         })}
@@ -2298,19 +2325,9 @@ function DetalhePlanoView({
               </p>
               <p className="mt-2">
                 <span
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
-                    planoAtual.pacoteFechado
-                      ? "bg-green-100 text-green-900"
-                      : planoAtual.pacoteRevisado
-                        ? "bg-blue-100 text-blue-900"
-                        : "bg-amber-100 text-amber-900"
-                  }`}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(planoAtual))}`}
                 >
-                  {planoAtual.pacoteFechado
-                    ? "Contrato fechado"
-                    : planoAtual.pacoteRevisado
-                      ? "Aguardando pagamento"
-                      : "Em análise"}
+                  {ETAPA_LABELS[etapaAtualDoPlano(planoAtual)]}
                 </span>
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -2591,8 +2608,26 @@ function DetalhePlanoView({
 
                   <div>
                     {interacoes.map((interacao, index) => {
+                      if (interacao.tipo === "mudanca_etapa") {
+                        return (
+                          <div
+                            key={interacao.id}
+                            className="my-4 flex items-center gap-3 first:mt-0"
+                          >
+                            <div className="h-px flex-1 bg-border" />
+                            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                              {interacao.texto}
+                            </span>
+                            <div className="h-px flex-1 bg-border" />
+                          </div>
+                        );
+                      }
+
                       const isUsuario = interacao.autor === "usuario";
                       const isUltima = index === interacoes.length - 1;
+                      const proxima = interacoes[index + 1];
+                      const mostrarLinha =
+                        !isUltima && proxima?.tipo !== "mudanca_etapa";
                       return (
                         <div key={interacao.id} className="flex gap-4">
                           <div className="flex flex-col items-center">
@@ -2609,7 +2644,7 @@ function DetalhePlanoView({
                                 />
                               )}
                             </div>
-                            {!isUltima && (
+                            {mostrarLinha && (
                               <div className="mt-1 w-0.5 flex-1 bg-border" />
                             )}
                           </div>
