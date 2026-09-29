@@ -5,8 +5,7 @@
 # Pra rodar a stack inteira junto (as 4 APIs + o backoffice.web), use o
 # docker-compose.stack.yml deste mesmo repositório:
 #   cp .env.example .env
-#   docker compose -f docker-compose.stack.yml build --no-cache
-#   docker compose -f docker-compose.stack.yml up
+#   docker compose -f docker-compose.stack.yml up --build
 #
 # docker compose up --build
 

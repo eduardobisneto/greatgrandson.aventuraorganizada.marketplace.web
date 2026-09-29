@@ -25,8 +25,7 @@
 #
 # Copie .env.example para .env antes de subir:
 #   cp .env.example .env
-#   docker compose -f docker-compose.stack.yml build --no-cache
-#   docker compose -f docker-compose.stack.yml up
+#   docker compose -f docker-compose.stack.yml up --build
 #
 # Pra subir só este web isolado (sem as APIs), use o docker-compose.yml
 # (sem sufixo) deste mesmo repositório.

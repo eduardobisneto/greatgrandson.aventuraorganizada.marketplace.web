@@ -50,8 +50,7 @@ Dois arquivos aqui:
 
   ```sh
   cp .env.example .env
-  docker compose -f docker-compose.stack.yml build --no-cache
-  docker compose -f docker-compose.stack.yml up
+  docker compose -f docker-compose.stack.yml up --build
   ```
 
 Sem compose, equivalente na mão pra só este serviço:
