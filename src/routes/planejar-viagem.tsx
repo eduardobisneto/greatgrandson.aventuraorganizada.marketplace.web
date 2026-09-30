@@ -19,6 +19,11 @@ import {
 import { useEffect, useState } from "react";
 
 import { Calendar } from "@/components/Calendar";
+import {
+  CarrosselHorizontal,
+  cartaoCarrosselClassName,
+  ConteudoCartaoOverlay,
+} from "@/components/CarrosselHorizontal";
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { RequireAuth } from "@/components/RequireAuth";
 import { destinos } from "@/data/destinos";
@@ -1754,6 +1759,40 @@ function DetalhePlanoView({
   }
 
   /**
+   * Carrossel com as experiências e atrações que fazem parte do dia —
+   * mesmo formato (CarrosselHorizontal + ConteudoCartaoOverlay) usado nas
+   * galerias da home, pra reaproveitar o mesmo tratamento visual e já
+   * trazer a descrição de cada uma pro cliente, em vez de só o texto
+   * corrido da linha do tempo acima.
+   */
+  function renderExperienciasEAtracoesDoDia(itens: PlanoViagem["itinerario"]) {
+    const passeiosDoDia = itens.filter((item) => item.categoria === "passeio");
+    if (passeiosDoDia.length === 0) return null;
+
+    return (
+      <div className="mt-8">
+        <h4 className="text-center text-xs font-semibold uppercase tracking-wide text-primary">
+          Experiências e atrações do dia
+        </h4>
+        <div className="mt-4">
+          <CarrosselHorizontal>
+            {passeiosDoDia.map((item) => (
+              <div key={item.id} className={cartaoCarrosselClassName}>
+                <ConteudoCartaoOverlay
+                  titulo={item.local}
+                  descricao={item.descricao}
+                  imagem={item.imagem}
+                  alt={item.local}
+                />
+              </div>
+            ))}
+          </CarrosselHorizontal>
+        </div>
+      </div>
+    );
+  }
+
+  /**
    * Ficha da viagem (etapa 7, e o que sai no PDF da etapa 9): documento
    * formal com os dados da agência, do cliente e da viagem, e uma tabela
    * com todas as atividades — o que de fato vai pro cliente, não só um
@@ -2140,6 +2179,7 @@ function DetalhePlanoView({
               <div className="mt-4">
                 {renderItensDoDia(itensDoDia, diaAtivo)}
               </div>
+              {renderExperienciasEAtracoesDoDia(itensDoDia)}
             </div>
           );
         })}
