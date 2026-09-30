@@ -1,6 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { ExperienciaCard } from "@/components/ExperienciaCard";
+import {
+  CarrosselHorizontal,
+  cartaoCarrosselClassName,
+  ConteudoCartaoOverlay,
+} from "@/components/CarrosselHorizontal";
 import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { experiencias } from "@/data/experiencias";
 
@@ -19,24 +23,24 @@ function ExperienciasPage() {
       />
 
       <section className="section-padding bg-sand-100">
-        <div className="container-tight">
-          <div className="grid gap-8 md:grid-cols-2">
-            {experiencias.map((experiencia) => (
-              <ExperienciaCard
-                key={experiencia.slug}
-                slug={experiencia.slug}
+        <CarrosselHorizontal>
+          {experiencias.map((experiencia) => (
+            <Link
+              key={experiencia.slug}
+              to="/experiencias/$slug"
+              params={{ slug: experiencia.slug }}
+              className={cartaoCarrosselClassName}
+            >
+              <ConteudoCartaoOverlay
                 titulo={experiencia.titulo}
                 descricao={experiencia.descricao}
                 imagem={experiencia.imagem}
                 alt={experiencia.alt}
                 icon={experiencia.icon}
-                nivel={experiencia.contexto.nivel}
-                faixaEtaria={experiencia.contexto.faixaEtaria}
-                epocaResumo={experiencia.contexto.epocaResumo}
               />
-            ))}
-          </div>
-        </div>
+            </Link>
+          ))}
+        </CarrosselHorizontal>
       </section>
     </>
   );

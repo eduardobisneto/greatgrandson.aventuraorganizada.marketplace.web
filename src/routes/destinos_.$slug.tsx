@@ -1,11 +1,13 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, CalendarDays, Check, MapPin, Users } from "lucide-react";
+import { useState } from "react";
 
 import {
   CarrosselHorizontal,
   cartaoCarrosselClassName,
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
+import { ExperienciaLightbox } from "@/components/ExperienciaLightbox";
 import { WhatsappButton } from "@/components/WhatsappButton";
 import { getDestino } from "@/data/destinos";
 import { getExperienciasPorDestino } from "@/data/experiencias";
@@ -27,6 +29,7 @@ function DestinoRoteiroPage() {
   const destino = Route.useLoaderData();
   const experiencias = getExperienciasPorDestino(destino.slug);
   const mapsSrc = `https://www.google.com/maps?q=${encodeURIComponent(destino.mapsQuery)}&z=${destino.mapsZoom}&output=embed`;
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <>
@@ -148,11 +151,11 @@ function DestinoRoteiroPage() {
 
           <div className="mt-12">
             <CarrosselHorizontal>
-              {experiencias.map((exp) => (
-                <Link
+              {experiencias.map((exp, index) => (
+                <button
                   key={exp.slug}
-                  to="/experiencias/$slug"
-                  params={{ slug: exp.slug }}
+                  type="button"
+                  onClick={() => setLightboxIndex(index)}
                   className={cartaoCarrosselClassName}
                 >
                   <ConteudoCartaoOverlay
@@ -162,11 +165,19 @@ function DestinoRoteiroPage() {
                     alt={exp.alt}
                     icon={exp.icon}
                   />
-                </Link>
+                </button>
               ))}
             </CarrosselHorizontal>
           </div>
         </section>
+      )}
+
+      {lightboxIndex !== null && (
+        <ExperienciaLightbox
+          experiencias={experiencias}
+          indiceInicial={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
 
       <section className="section-padding bg-sand-100">
