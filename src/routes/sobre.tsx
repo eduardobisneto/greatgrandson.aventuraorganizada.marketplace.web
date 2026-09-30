@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { WhatsappButton } from "@/components/WhatsappButton";
 import transporteImg from "@/assets/transporte.jpeg";
 import hospedagemImg from "@/assets/hospedagem.jpeg";
@@ -13,26 +14,12 @@ export const Route = createFileRoute("/sobre")({
 function SobrePage() {
   return (
     <>
-      <section className="section-padding">
-        <div className="container-tight">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Sobre nós
-            </span>
-            <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-              Organizamos aventuras desde a saída de casa até a volta
-            </h1>
-            <p className="mt-4 text-muted-foreground">
-              A Aventura Organizada nasceu para tirar do papel viagens de
-              turismo de aventura sem a dor de cabeça de planejar cada detalhe
-              sozinho. Cuidamos da mobilidade, da estadia, das experiências
-              gastronômicas e das experiências culturais e de entretenimento,
-              para que você só precise aproveitar a viagem — seja em grupo, com
-              os amigos ou em família.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeroBanner
+        seed="sobre"
+        eyebrow="Sobre nós"
+        titulo="Organizamos aventuras desde a saída de casa até a volta"
+        descricao="A Aventura Organizada nasceu para tirar do papel viagens de turismo de aventura sem a dor de cabeça de planejar cada detalhe sozinho. Cuidamos da mobilidade, da estadia, das experiências gastronômicas e das experiências culturais e de entretenimento, para que você só precise aproveitar a viagem."
+      />
 
       <section className="section-padding bg-sand-100">
         <div className="container-tight grid gap-8 md:grid-cols-2 md:items-center">

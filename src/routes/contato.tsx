@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Instagram, Mail, Phone } from "lucide-react";
 
+import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { WhatsappButton } from "@/components/WhatsappButton";
 
 export const Route = createFileRoute("/contato")({
@@ -31,25 +32,16 @@ const canais = [
 function ContatoPage() {
   return (
     <>
-      <section className="section-padding">
-        <div className="container-tight">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Contato
-            </span>
-            <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-              Vamos planejar a sua aventura
-            </h1>
-            <p className="mt-4 text-muted-foreground">
-              Fale com a gente pelo WhatsApp e monte um roteiro sob medida para
-              o seu grupo em qualquer um dos nossos destinos.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <WhatsappButton variant="solid" />
-            </div>
-          </div>
+      <PageHeroBanner
+        seed="contato"
+        eyebrow="Contato"
+        titulo="Vamos planejar a sua aventura"
+        descricao="Fale com a gente pelo WhatsApp e monte um roteiro sob medida para o seu grupo em qualquer um dos nossos destinos."
+      >
+        <div className="mt-2">
+          <WhatsappButton variant="solid" />
         </div>
-      </section>
+      </PageHeroBanner>
 
       <section className="section-padding bg-sand-100">
         <div className="container-tight">

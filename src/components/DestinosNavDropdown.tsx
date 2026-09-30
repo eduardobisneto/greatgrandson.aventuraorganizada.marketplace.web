@@ -68,6 +68,7 @@ export function DestinosNavDropdown({
   transparente?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
+  const [paisAtivo, setPaisAtivo] = useState(GRUPOS[0]?.pais);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const ref = useRef<HTMLDivElement>(null);
   const isActive = pathname.startsWith("/destinos");
@@ -84,53 +85,47 @@ export function DestinosNavDropdown({
   }, [mobile]);
 
   /**
-   * "escuro" é um teste de estilo (inspirado no menu do adventureclub):
-   * painel em verde-bandeira com texto branco, só no dropdown desktop —
-   * o menu mobile mantém a paleta padrão do site.
+   * Lista de estados > cidades de UM país — usada tanto empilhada (mobile,
+   * um bloco por país) quanto na coluna da direita do painel desktop
+   * (só do país ativo, ao estilo "duas colunas" do concorrente).
    */
-  function renderGrupos(
+  function renderEstados(
+    grupoPais: GrupoPais | undefined,
     onClickDestino: () => void,
     variante: "claro" | "escuro" = "claro",
   ) {
-    const corPais = variante === "escuro" ? "text-white/70" : "text-primary";
+    if (!grupoPais) return null;
     const corEstado =
       variante === "escuro" ? "text-white/90" : "text-muted-foreground";
     const corCidade =
       variante === "escuro"
-        ? "text-white hover:bg-white/15 hover:text-white"
+        ? "text-white hover:bg-white/25 hover:text-white"
         : "text-foreground hover:bg-secondary hover:text-primary";
 
-    return GRUPOS.map((grupoPais) => (
-      <div key={grupoPais.pais}>
-        <p
-          className={`text-xs font-semibold uppercase tracking-wide ${corPais}`}
-        >
-          {grupoPais.pais}
-        </p>
-        <div className="mt-2 space-y-3">
-          {grupoPais.estados.map((grupoEstado) => (
-            <div key={grupoEstado.sigla}>
-              <p className={`text-xs font-semibold ${corEstado}`}>
-                {grupoEstado.estado}
-              </p>
-              <div className="mt-1 flex flex-col">
-                {grupoEstado.destinos.map((destino) => (
-                  <Link
-                    key={destino.slug}
-                    to="/destinos/$slug"
-                    params={{ slug: destino.slug }}
-                    onClick={onClickDestino}
-                    className={`rounded px-1.5 py-1 text-sm transition-colors ${corCidade}`}
-                  >
-                    {nomeCidade(destino.nome)}
-                  </Link>
-                ))}
-              </div>
+    return (
+      <div className="space-y-3">
+        {grupoPais.estados.map((grupoEstado) => (
+          <div key={grupoEstado.sigla}>
+            <p className={`text-xs font-semibold ${corEstado}`}>
+              {grupoEstado.estado}
+            </p>
+            <div className="mt-1 flex flex-col">
+              {grupoEstado.destinos.map((destino) => (
+                <Link
+                  key={destino.slug}
+                  to="/destinos/$slug"
+                  params={{ slug: destino.slug }}
+                  onClick={onClickDestino}
+                  className={`rounded px-1.5 py-1 text-sm transition-colors ${corCidade}`}
+                >
+                  {nomeCidade(destino.nome)}
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    ));
+    );
   }
 
   if (mobile) {
@@ -148,12 +143,23 @@ export function DestinosNavDropdown({
         </button>
         {aberto && (
           <div className="mt-3 space-y-4 border-l-2 border-border pl-4">
-            {renderGrupos(() => onNavigate?.())}
+            {GRUPOS.map((grupoPais) => (
+              <div key={grupoPais.pais}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  {grupoPais.pais}
+                </p>
+                <div className="mt-2">
+                  {renderEstados(grupoPais, () => onNavigate?.())}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
     );
   }
+
+  const grupoPaisAtivo = GRUPOS.find((g) => g.pais === paisAtivo) ?? GRUPOS[0];
 
   return (
     <div ref={ref} className="relative">
@@ -177,8 +183,29 @@ export function DestinosNavDropdown({
       </button>
 
       {aberto && (
-        <div className="absolute left-0 top-full mt-2 w-72 space-y-4 rounded-xl bg-[#009739] p-4 shadow-lg">
-          {renderGrupos(() => setAberto(false), "escuro")}
+        <div className="absolute left-0 top-full mt-2 flex w-[30rem] overflow-hidden rounded-xl bg-[#009739]/95 shadow-lg backdrop-blur-sm">
+          {/* Coluna dos países — hover troca o que aparece na coluna da direita, igual ao menu do concorrente. */}
+          <div className="w-36 shrink-0 space-y-0.5 border-r border-white/15 p-3">
+            {GRUPOS.map((grupoPais) => (
+              <button
+                key={grupoPais.pais}
+                type="button"
+                onMouseEnter={() => setPaisAtivo(grupoPais.pais)}
+                onClick={() => setPaisAtivo(grupoPais.pais)}
+                className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
+                  grupoPaisAtivo?.pais === grupoPais.pais
+                    ? "bg-white/25 text-white"
+                    : "text-white/80 hover:bg-white/25 hover:text-white"
+                }`}
+              >
+                {grupoPais.pais}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 p-4">
+            {renderEstados(grupoPaisAtivo, () => setAberto(false), "escuro")}
+          </div>
         </div>
       )}
     </div>

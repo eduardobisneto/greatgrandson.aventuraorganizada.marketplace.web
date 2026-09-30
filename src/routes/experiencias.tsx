@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ExperienciaCard } from "@/components/ExperienciaCard";
+import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { experiencias } from "@/data/experiencias";
 
 export const Route = createFileRoute("/experiencias")({
@@ -10,22 +11,12 @@ export const Route = createFileRoute("/experiencias")({
 function ExperienciasPage() {
   return (
     <>
-      <section className="section-padding">
-        <div className="container-tight">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Experiências
-            </span>
-            <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-              Atividades que fazem parte dos nossos roteiros
-            </h1>
-            <p className="mt-4 text-muted-foreground">
-              De experiências tranquilas às mais emocionantes, montamos o pacote
-              ideal para o seu grupo.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeroBanner
+        seed="experiencias"
+        eyebrow="Experiências"
+        titulo="Atividades que fazem parte dos nossos roteiros"
+        descricao="De experiências tranquilas às mais emocionantes, montamos o pacote ideal para o seu grupo."
+      />
 
       <section className="section-padding bg-sand-100">
         <div className="container-tight">
