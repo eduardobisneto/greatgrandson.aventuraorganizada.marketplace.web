@@ -1,29 +1,41 @@
-import { Bus, BedDouble, Ticket, UtensilsCrossed } from "lucide-react";
+import {
+  BedDouble,
+  Compass,
+  Plane,
+  Ticket,
+  UtensilsCrossed,
+} from "lucide-react";
 
 const itens = [
   {
-    icon: Bus,
-    titulo: "Mobilidade",
+    icon: Plane,
+    titulo: "Mobilidade (Aéreo e terrestre)",
     descricao:
-      "Van ou ônibus exclusivo desde a saída da sua cidade até o destino, com motoristas experientes e paradas estratégicas.",
+      "Voos e transporte terrestre organizados de ponta a ponta, com motoristas experientes e paradas estratégicas até o destino.",
   },
   {
     icon: BedDouble,
-    titulo: "Experiências de Estadia",
+    titulo: "Estadia",
     descricao:
       "Pousadas selecionadas próximas às atrações, com conforto, café da manhã regional e ambiente integrado à natureza.",
   },
   {
     icon: UtensilsCrossed,
-    titulo: "Experiências Gastronômicas",
+    titulo: "Gastronomia",
     descricao:
       "Refeições planejadas para manter a energia da aventura: café da manhã, almoço e jantar com opções especiais.",
   },
   {
     icon: Ticket,
-    titulo: "Experiências Culturais e Entretenimento",
+    titulo: "Cultura e Entretenimento",
     descricao:
-      "Ingressos com reserva antecipada para todos os passeios e atrações: flutuação, cachoeiras, grutas e trilhas. Sem filas, sem estresse.",
+      "Ingressos com reserva antecipada para eventos, passeios culturais e programação de entretenimento. Sem filas, sem estresse.",
+  },
+  {
+    icon: Compass,
+    titulo: "Atrações e Atividades",
+    descricao:
+      "Acesso às principais atrações do destino e suas atividades: flutuação, cachoeiras, grutas, trilhas e muito mais.",
   },
 ];
 
@@ -44,7 +56,7 @@ export function OrganizacaoSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {itens.map((item) => (
             <div
               key={item.titulo}
