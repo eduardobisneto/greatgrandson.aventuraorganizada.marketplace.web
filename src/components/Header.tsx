@@ -39,6 +39,9 @@ function ehRotaComHeroNoTopo(pathname: string): boolean {
     pathname === "/experiencias" ||
     pathname === "/sobre" ||
     pathname === "/contato" ||
+    // Lista, detalhe de um plano e o wizard de novo planejamento — os 3
+    // estados dessa rota já têm PageHeroBanner no topo.
+    pathname === "/planejar-viagem" ||
     /^\/destinos\/[^/]+$/.test(pathname) ||
     /^\/experiencias\/[^/]+$/.test(pathname)
   );
