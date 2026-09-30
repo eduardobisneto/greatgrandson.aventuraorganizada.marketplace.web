@@ -44,7 +44,18 @@ function RootComponent() {
     <RootDocument>
       <AuthProvider>
         <Header />
-        <Outlet />
+        {/*
+          O header agora é fixed (flutua sobre o hero nas páginas que têm
+          um banner full-bleed no topo — ver ehRotaComHeroNoTopo em
+          Header.tsx), então saiu do fluxo normal. Esse padding-top
+          compensa a altura dele (h-16) pra todo o resto do site não ficar
+          escondido atrás dele; as 3 seções de hero cancelam esse espaço
+          com -mt-16, pra ficarem coladas no topo de verdade, atrás do
+          header transparente.
+        */}
+        <main className="pt-16">
+          <Outlet />
+        </main>
         <Footer />
         <CookieConsent />
         <FloatingWhatsappButton />

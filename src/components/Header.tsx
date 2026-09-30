@@ -25,15 +25,47 @@ const navLinks = [
   { to: "/contato", label: "Contato" },
 ];
 
+/**
+ * Rotas cuja primeira seção é um banner full-bleed com imagem (Hero da
+ * home, topo da página do destino, topo da página da experiência) — só
+ * nelas o header flutua transparente sobre a imagem, igual ao menu do
+ * concorrente. Nas demais páginas (sem imagem no topo) ele continua
+ * sólido, senão o texto claro ficaria ilegível sobre um fundo claro.
+ */
+function ehRotaComHeroNoTopo(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    /^\/destinos\/[^/]+$/.test(pathname) ||
+    /^\/experiencias\/[^/]+$/.test(pathname)
+  );
+}
+
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const perfilRef = useRef<HTMLDivElement>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, ready, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [temViagens, setTemViagens] = useState(false);
+
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 10);
+    }
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const transparente =
+    ehRotaComHeroNoTopo(pathname) && !scrolled && !mobileOpen;
+  const corTexto = transparente ? "text-sand-50" : "text-foreground";
+  const corTextoMuted = transparente
+    ? "text-sand-50/80 hover:text-sand-50"
+    : "text-muted-foreground hover:text-foreground";
 
   useEffect(() => {
     function recalcular() {
@@ -62,10 +94,18 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur print:hidden">
+    <header
+      className={`fixed top-0 z-50 w-full transition-colors print:hidden ${
+        transparente
+          ? "border-b border-transparent bg-transparent"
+          : "border-b border-border/50 bg-background/95 backdrop-blur"
+      }`}
+    >
       <div className="container-tight flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-foreground">
-          <Mountain className="h-6 w-6 text-primary" />
+        <Link to="/" className={`flex items-center gap-2 ${corTexto}`}>
+          <Mountain
+            className={`h-6 w-6 ${transparente ? "text-sand-50" : "text-primary"}`}
+          />
           <span className="font-display text-xl tracking-tight">
             Aventura Organizada
           </span>
@@ -75,15 +115,13 @@ export function Header() {
           <Link
             to="/"
             className={`text-sm font-medium uppercase tracking-wide transition-colors ${
-              pathname === "/"
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              pathname === "/" ? corTexto : corTextoMuted
             }`}
           >
             Home
           </Link>
 
-          <DestinosNavDropdown />
+          <DestinosNavDropdown transparente={transparente} />
 
           {navLinks.map((link) => {
             const isActive = pathname === link.to;
@@ -92,9 +130,7 @@ export function Header() {
                 key={link.to}
                 to={link.to}
                 className={`text-sm font-medium uppercase tracking-wide transition-colors ${
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActive ? corTexto : corTextoMuted
                 }`}
               >
                 {link.label}
@@ -119,7 +155,7 @@ export function Header() {
                   <button
                     type="button"
                     onClick={() => setPerfilOpen((atual) => !atual)}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
+                    className={`inline-flex items-center gap-1.5 text-sm font-medium ${corTexto}`}
                   >
                     {user.avatarUrl ? (
                       <img
@@ -128,10 +164,12 @@ export function Header() {
                         className="h-6 w-6 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-4 w-4 text-primary" />
+                      <User
+                        className={`h-4 w-4 ${transparente ? "text-sand-50" : "text-primary"}`}
+                      />
                     )}
                     {user.nome.split(" ")[0]}
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <ChevronDown className={`h-3.5 w-3.5 ${corTextoMuted}`} />
                   </button>
 
                   {perfilOpen && (
@@ -167,7 +205,7 @@ export function Header() {
                 <Link
                   to="/login"
                   search={{ redirect: undefined }}
-                  className="text-sm font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+                  className={`text-sm font-medium uppercase tracking-wide transition-colors ${corTextoMuted}`}
                 >
                   Entrar
                 </Link>
@@ -178,7 +216,7 @@ export function Header() {
 
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-md p-2 text-foreground md:hidden"
+          className={`inline-flex items-center justify-center rounded-md p-2 md:hidden ${corTexto}`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
         >

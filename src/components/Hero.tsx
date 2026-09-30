@@ -26,7 +26,7 @@ export function Hero() {
   }
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative -mt-16 overflow-hidden">
       <div className="absolute inset-0">
         {destinos.map((d, i) => (
           <img
