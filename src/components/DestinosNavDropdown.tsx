@@ -60,9 +60,12 @@ function nomeCidade(nomeCompleto: string): string {
 export function DestinosNavDropdown({
   mobile,
   onNavigate,
+  transparente,
 }: {
   mobile?: boolean;
   onNavigate?: () => void;
+  /** Header flutuando sobre um hero — texto claro, mesmo quando não ativo (variante desktop apenas). */
+  transparente?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -158,9 +161,13 @@ export function DestinosNavDropdown({
         type="button"
         onClick={() => setAberto((v) => !v)}
         className={`flex items-center gap-1 text-sm font-medium uppercase tracking-wide transition-colors ${
-          isActive
-            ? "text-foreground"
-            : "text-muted-foreground hover:text-foreground"
+          transparente
+            ? isActive
+              ? "text-sand-50"
+              : "text-sand-50/80 hover:text-sand-50"
+            : isActive
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
         }`}
       >
         Destinos
