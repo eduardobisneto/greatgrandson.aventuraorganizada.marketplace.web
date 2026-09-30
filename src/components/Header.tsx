@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { DestinosNavDropdown } from "@/components/DestinosNavDropdown";
 import { useAuth } from "@/lib/auth-context";
 import {
   getPlanosDoUsuario,
@@ -19,8 +20,6 @@ import {
 } from "@/lib/trip-plan";
 
 const navLinks = [
-  { to: "/", label: "Home" },
-  { to: "/destinos", label: "Destinos" },
   { to: "/experiencias", label: "Experiências" },
   { to: "/sobre", label: "Sobre" },
   { to: "/contato", label: "Contato" },
@@ -73,6 +72,19 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
+          <Link
+            to="/"
+            className={`text-sm font-medium uppercase tracking-wide transition-colors ${
+              pathname === "/"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Home
+          </Link>
+
+          <DestinosNavDropdown />
+
           {navLinks.map((link) => {
             const isActive = pathname === link.to;
             return (
@@ -181,6 +193,17 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-border/50 bg-background md:hidden">
           <div className="container-tight flex flex-col gap-4 py-6">
+            <Link
+              to="/"
+              onClick={() => setMobileOpen(false)}
+              className="text-base font-medium uppercase tracking-wide text-foreground"
+            >
+              Home
+            </Link>
+            <DestinosNavDropdown
+              mobile
+              onNavigate={() => setMobileOpen(false)}
+            />
             {navLinks.map((link) => (
               <Link
                 key={link.to}

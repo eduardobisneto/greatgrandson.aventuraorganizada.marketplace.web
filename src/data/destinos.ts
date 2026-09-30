@@ -24,9 +24,17 @@ export interface NumeroDestino {
   label: string;
 }
 
+export interface Estado {
+  nome: string;
+  sigla: string;
+}
+
 export interface Destino {
   slug: string;
   nome: string;
+  /** País > Estado > Destino — usado no menu de navegação agrupado. Só Brasil por enquanto. */
+  pais: string;
+  estado: Estado;
   tagline: string;
   descricao: string;
   imagem: string;
@@ -54,6 +62,8 @@ export const destinos: Destino[] = [
   {
     slug: "bonito",
     nome: "Bonito, MS",
+    pais: "Brasil",
+    estado: { nome: "Mato Grosso do Sul", sigla: "MS" },
     tagline: "Águas cristalinas e grutas",
     descricao:
       "Roteiro completo por flutuações em rios de águas transparentes, grutas e cachoeiras na capital brasileira do ecoturismo.",
@@ -132,6 +142,8 @@ export const destinos: Destino[] = [
   {
     slug: "socorro",
     nome: "Socorro, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "A capital do turismo de aventura",
     descricao:
       "Trilhas, tirolesas, rafting e cachoeiras a poucas horas de São Paulo, com estrutura completa para todos os níveis de aventura.",
@@ -219,6 +231,8 @@ export const destinos: Destino[] = [
   {
     slug: "brotas",
     nome: "Brotas, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Rios, cachoeiras e adrenalina",
     descricao:
       "Rafting, bóia-cross, tirolesas e cachoeiras em um dos points de esportes de aventura mais completos do interior paulista.",
@@ -290,6 +304,8 @@ export const destinos: Destino[] = [
   {
     slug: "ubatuba",
     nome: "Ubatuba, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Praias e trilhas na Mata Atlântica",
     descricao:
       "Mais de 100 praias, trilhas na mata atlântica preservada e passeios de barco até ilhas e piscinas naturais no litoral norte de SP.",
@@ -354,6 +370,8 @@ export const destinos: Destino[] = [
   {
     slug: "petar",
     nome: "PETAR, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Cavernas e trilhas na Mata Atlântica",
     descricao:
       "Roteiro de espeleologia por algumas das maiores cavernas do Brasil, entre trilhas e cachoeiras no coração da Mata Atlântica do Vale do Ribeira.",
@@ -418,6 +436,8 @@ export const destinos: Destino[] = [
   {
     slug: "cataratas-do-iguacu",
     nome: "Foz do Iguaçu, PR",
+    pais: "Brasil",
+    estado: { nome: "Paraná", sigla: "PR" },
     tagline: "Um dos maiores espetáculos naturais do mundo",
     descricao:
       "Roteiro pelas Cataratas do Iguaçu, um dos maiores espetáculos naturais do mundo, com trilhas, mirantes e passeio de barco até perto das quedas.",
@@ -491,6 +511,8 @@ export const destinos: Destino[] = [
   {
     slug: "sao-pedro",
     nome: "São Pedro, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Águas termais e paraquedismo",
     descricao:
       "Roteiro que combina relaxamento em águas termais e mineral com um dos principais points de paraquedismo do Brasil, no interior de São Paulo.",
@@ -554,6 +576,8 @@ export const destinos: Destino[] = [
   {
     slug: "cunha",
     nome: "Cunha, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Clima de montanha, trilha histórica e vinícolas",
     descricao:
       "Roteiro na Serra da Bocaina, entre trilhas históricas, vinícolas de altitude e cerâmica artesanal, com clima de montanha o ano todo.",
@@ -617,6 +641,8 @@ export const destinos: Destino[] = [
   {
     slug: "olimpia",
     nome: "Olímpia, SP",
+    pais: "Brasil",
+    estado: { nome: "São Paulo", sigla: "SP" },
     tagline: "Capital nacional dos parques aquáticos",
     descricao:
       "Roteiro pelo maior polo de parques aquáticos do Brasil, com toboáguas, piscinas de ondas e águas termais para curtir o ano todo.",
@@ -680,6 +706,8 @@ export const destinos: Destino[] = [
   {
     slug: "cabo-frio",
     nome: "Cabo Frio, RJ",
+    pais: "Brasil",
+    estado: { nome: "Rio de Janeiro", sigla: "RJ" },
     tagline: "Dunas, ilhas e o mar mais azul do Rio",
     descricao:
       "Praias de areia branca e água cristalina, dunas para andar de buggy e ilhas só acessíveis de barco na Região dos Lagos fluminense.",
@@ -745,13 +773,18 @@ export const destinos: Destino[] = [
     ],
     numeros: [
       { valor: "1615", label: "ano de fundação" },
-      { valor: "Costa do Sol", label: "apelido da região, por suas águas claras" },
+      {
+        valor: "Costa do Sol",
+        label: "apelido da região, por suas águas claras",
+      },
       { valor: "dezenas de", label: "praias e enseadas" },
     ],
   },
   {
     slug: "paraty",
     nome: "Paraty, RJ",
+    pais: "Brasil",
+    estado: { nome: "Rio de Janeiro", sigla: "RJ" },
     tagline: "Centro histórico, ilhas e cachoeiras",
     descricao:
       "Centro histórico colonial tombado pela UNESCO, ilhas e piscinas naturais só acessíveis de barco e cachoeiras na Mata Atlântica preservada.",
