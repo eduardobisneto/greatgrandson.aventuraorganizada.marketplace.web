@@ -2,9 +2,44 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 
-import { destinos } from "@/data/destinos";
+import { destinos, type Destino } from "@/data/destinos";
+import { getExperienciasPorDestino } from "@/data/experiencias";
 
 const AUTO_PLAY_MS = 6000;
+
+function juntarComE(itens: string[]): string {
+  if (itens.length === 0) return "";
+  if (itens.length === 1) return itens[0]!;
+  return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+}
+
+function extrairNoites(duracao: string): number | null {
+  const encontrado = duracao.match(/(\d+)\s*noites?/i);
+  return encontrado ? Number(encontrado[1]) : null;
+}
+
+/** "Viagem em Família para Bonito · 4 noites" — o roteiro em destaque desse destino na home. */
+function tituloRoteiro(destino: Destino): string {
+  const cidade = destino.nome.split(",")[0] ?? destino.nome;
+  const noites = extrairNoites(destino.duracao);
+  return `Viagem em ${destino.tipoViagem} para ${cidade}${noites ? ` · ${noites} noites` : ""}`;
+}
+
+/** Descrição comercial a partir das principais experiências e atrações do destino, em vez do texto genérico. */
+function descricaoRoteiro(destino: Destino): string {
+  const experienciasTitulos = getExperienciasPorDestino(destino.slug)
+    .slice(0, 3)
+    .map((e) => e.titulo.toLowerCase());
+  const atracoesNomes = destino.atracoes.slice(0, 3).map((a) => a.nome);
+
+  if (experienciasTitulos.length > 0 && atracoesNomes.length > 0) {
+    return `Viva ${juntarComE(experienciasTitulos)} em pontos como ${juntarComE(atracoesNomes)}.`;
+  }
+  if (atracoesNomes.length > 0) {
+    return `Conheça ${juntarComE(atracoesNomes)}.`;
+  }
+  return destino.descricao;
+}
 
 export function Hero() {
   const [index, setIndex] = useState(0);
@@ -48,11 +83,11 @@ export function Hero() {
           </div>
 
           <h1 className="text-balance text-4xl leading-[1.1] md:text-6xl lg:text-7xl">
-            Sua aventura organizada do início ao fim
+            {tituloRoteiro(destino)}
           </h1>
 
           <p className="max-w-xl text-balance text-lg leading-relaxed text-forest-100 md:text-xl">
-            {destino.descricao}
+            {descricaoRoteiro(destino)}
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
