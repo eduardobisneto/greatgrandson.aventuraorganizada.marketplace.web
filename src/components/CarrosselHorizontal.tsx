@@ -12,6 +12,14 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  * criava overflow horizontal na página inteira (barra de rolagem
  * indevida no rodapé). Usando `100%` (da própria section, que já é
  * full-width) esse problema não existe.
+ *
+ * O wrapper usa `w-fit` (limitado a `max-w-full`), não `w-full`: com
+ * poucos cards (que não preenchem a largura disponível), isso encolhe o
+ * carrossel até o conteúdo de verdade, então as setas ficam coladas nas
+ * extremidades dos cards visíveis, em vez de flutuarem longe deles num
+ * espaço vazio. Com cards suficientes pra encher o espaço, o `max-w-full`
+ * garante que ele ainda ocupa toda a largura disponível, mantendo o
+ * scroll interno normalmente.
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   const trilhaRef = useRef<HTMLDivElement>(null);
@@ -27,10 +35,10 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative mx-auto w-fit max-w-full">
       <div
         ref={trilhaRef}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[max(1.5rem,calc((100%-72rem)/2+1.5rem))] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[max(1.5rem,calc((100%-72rem)/2+1.5rem))] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
