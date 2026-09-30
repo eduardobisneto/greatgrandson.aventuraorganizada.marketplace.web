@@ -1,18 +1,56 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 /**
- * Carrossel horizontal full-bleed — quebra o container-tight e ocupa
- * toda a largura da viewport, com scroll nativo (swipe/wheel/trackpad) e
- * snap. Sem JS de carrossel: os cards têm largura fluida por breakpoint,
- * o navegador cuida do resto — responsivo por natureza, sem lógica de
- * paginação pra manter.
+ * Carrossel horizontal full-bleed — scroll nativo (swipe/wheel/trackpad)
+ * com snap, mais setas de navegação (mesmo comportamento do Hero). É
+ * renderizado full-width de propósito: quem usa deve colocar esse
+ * componente FORA do `container-tight`, direto como filho da `<section>`
+ * — nunca dentro do container, e nunca com `w-screen`/`100vw`: 100vw
+ * inclui a largura da barra de rolagem vertical do navegador, o que
+ * criava overflow horizontal na página inteira (barra de rolagem
+ * indevida no rodapé). Usando `100%` (da própria section, que já é
+ * full-width) esse problema não existe.
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
+  const trilhaRef = useRef<HTMLDivElement>(null);
+
+  function rolar(direcao: 1 | -1) {
+    const trilha = trilhaRef.current;
+    if (!trilha) return;
+    const primeiroCard = trilha.firstElementChild as HTMLElement | null;
+    const distancia = primeiroCard
+      ? primeiroCard.getBoundingClientRect().width + 16 // gap-4 = 16px
+      : trilha.clientWidth * 0.9;
+    trilha.scrollBy({ left: distancia * direcao, behavior: "smooth" });
+  }
+
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -mx-[50vw]">
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] [&::-webkit-scrollbar]:hidden">
+    <div className="relative w-full">
+      <div
+        ref={trilhaRef}
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[max(1.5rem,calc((100%-72rem)/2+1.5rem))] [&::-webkit-scrollbar]:hidden"
+      >
         {children}
       </div>
+
+      <button
+        type="button"
+        onClick={() => rolar(-1)}
+        aria-label="Ver anterior"
+        className="absolute left-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary sm:left-4 sm:p-2"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => rolar(1)}
+        aria-label="Ver próximo"
+        className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary sm:right-4 sm:p-2"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
     </div>
   );
 }
