@@ -383,142 +383,144 @@ function PlanejarViagemPage() {
   }
 
   return (
-    <section className="section-padding">
-      <div className="container-tight">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Planejar viagem
-          </span>
-          <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-            Vamos montar a sua aventura, {user?.nome.split(" ")[0]}
-          </h1>
+    <>
+      <PageHeroBanner
+        seed="planejar-viagem-novo"
+        eyebrow="Planejar viagem"
+        titulo={`Vamos montar a sua aventura, ${user?.nome.split(" ")[0]}`}
+      />
+
+      <section className="section-padding">
+        <div className="container-tight">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-1">
+            {STEP_ORDER.map((s, index) => (
+              <div key={s} className="flex flex-1 items-center gap-1">
+                {index <= stepIndex ? (
+                  <button
+                    type="button"
+                    onClick={() => irPara(s)}
+                    aria-label={`Voltar para ${STEP_LABELS[s]}`}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-80"
+                  >
+                    {index + 1}
+                  </button>
+                ) : index <= maxStepIndexVisitado ? (
+                  <button
+                    type="button"
+                    onClick={() => irPara(s)}
+                    aria-label={`Ir para ${STEP_LABELS[s]}`}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                  >
+                    {index + 1}
+                  </button>
+                ) : (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
+                    {index + 1}
+                  </div>
+                )}
+                {index < STEP_ORDER.length - 1 && (
+                  <div
+                    className={`h-0.5 flex-1 ${index < stepIndex ? "bg-primary" : "bg-secondary"}`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-center text-sm font-medium text-muted-foreground">
+            {STEP_LABELS[step]}
+          </p>
+
+          <div className="mt-12">
+            {step === "tipo" && (
+              <TipoStep
+                onEscolher={(tipo) => {
+                  setTipoInicial(tipo);
+                  irPara("selecao");
+                }}
+              />
+            )}
+
+            {step === "selecao" && tipoInicial && (
+              <SelecaoStep
+                tipoInicial={tipoInicial}
+                selecoesMap={selecoesMap}
+                onToggleDestino={toggleDestino}
+                onToggleExperiencia={toggleExperienciaDoDestino}
+                onVoltar={() => irPara("tipo")}
+                onAvancar={() => {
+                  setDestinoAtualIndex(0);
+                  irPara("calendario");
+                }}
+              />
+            )}
+
+            {step === "calendario" && (
+              <CalendarioStep
+                destinosSelecionados={destinosSelecionados}
+                destinoAtualIndex={destinoAtualIndex}
+                onIrParaDestino={setDestinoAtualIndex}
+                datasInicio={datasInicio}
+                datasFim={datasFim}
+                onSelecionarData={selecionarDataDoDestino}
+                adultosMap={adultosMap}
+                onAdultosChange={(slug, valor) =>
+                  setAdultosMap((atual) => ({ ...atual, [slug]: valor }))
+                }
+                criancasMap={criancasMap}
+                onCriancasChange={(slug, valor) => {
+                  setCriancasMap((atual) => ({ ...atual, [slug]: valor }));
+                  setIdadesCriancasMap((atual) => {
+                    const atuais = atual[slug] ?? [];
+                    const proximas = Array.from(
+                      { length: Math.max(valor, 0) },
+                      (_, i) => atuais[i] ?? 0,
+                    );
+                    return { ...atual, [slug]: proximas };
+                  });
+                }}
+                idadesCriancasMap={idadesCriancasMap}
+                onIdadeCriancaChange={(slug, indice, idade) =>
+                  setIdadesCriancasMap((atual) => {
+                    const atuais = [...(atual[slug] ?? [])];
+                    atuais[indice] = idade;
+                    return { ...atual, [slug]: atuais };
+                  })
+                }
+                interessesMap={interessesMap}
+                onToggleInteresse={toggleInteresseDoDestino}
+                inclusosMap={inclusosMap}
+                onToggleIncluso={toggleInclusoDoDestino}
+                contextoDestinoMap={contextoDestinoMap}
+                onContextoDestinoChange={(slug, valor) =>
+                  setContextoDestinoMap((atual) => ({
+                    ...atual,
+                    [slug]: valor,
+                  }))
+                }
+                onVoltar={() => irPara("selecao")}
+                onAvancar={() => irPara("resumo")}
+              />
+            )}
+
+            {step === "resumo" && (
+              <ResumoStep
+                destinosSelecionados={destinosSelecionados}
+                selecoesMap={selecoesMap}
+                datasInicio={datasInicio}
+                datasFim={datasFim}
+                adultosMap={adultosMap}
+                criancasMap={criancasMap}
+                interessesMap={interessesMap}
+                inclusosMap={inclusosMap}
+                contextoDestinoMap={contextoDestinoMap}
+                onVoltar={() => irPara("calendario")}
+                onEnviar={handleEnviar}
+              />
+            )}
+          </div>
         </div>
-
-        <div className="mx-auto mt-8 flex max-w-2xl items-center justify-between gap-1">
-          {STEP_ORDER.map((s, index) => (
-            <div key={s} className="flex flex-1 items-center gap-1">
-              {index <= stepIndex ? (
-                <button
-                  type="button"
-                  onClick={() => irPara(s)}
-                  aria-label={`Voltar para ${STEP_LABELS[s]}`}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-80"
-                >
-                  {index + 1}
-                </button>
-              ) : index <= maxStepIndexVisitado ? (
-                <button
-                  type="button"
-                  onClick={() => irPara(s)}
-                  aria-label={`Ir para ${STEP_LABELS[s]}`}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-transparent text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
-                >
-                  {index + 1}
-                </button>
-              ) : (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
-                  {index + 1}
-                </div>
-              )}
-              {index < STEP_ORDER.length - 1 && (
-                <div
-                  className={`h-0.5 flex-1 ${index < stepIndex ? "bg-primary" : "bg-secondary"}`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-center text-sm font-medium text-muted-foreground">
-          {STEP_LABELS[step]}
-        </p>
-
-        <div className="mt-12">
-          {step === "tipo" && (
-            <TipoStep
-              onEscolher={(tipo) => {
-                setTipoInicial(tipo);
-                irPara("selecao");
-              }}
-            />
-          )}
-
-          {step === "selecao" && tipoInicial && (
-            <SelecaoStep
-              tipoInicial={tipoInicial}
-              selecoesMap={selecoesMap}
-              onToggleDestino={toggleDestino}
-              onToggleExperiencia={toggleExperienciaDoDestino}
-              onVoltar={() => irPara("tipo")}
-              onAvancar={() => {
-                setDestinoAtualIndex(0);
-                irPara("calendario");
-              }}
-            />
-          )}
-
-          {step === "calendario" && (
-            <CalendarioStep
-              destinosSelecionados={destinosSelecionados}
-              destinoAtualIndex={destinoAtualIndex}
-              onIrParaDestino={setDestinoAtualIndex}
-              datasInicio={datasInicio}
-              datasFim={datasFim}
-              onSelecionarData={selecionarDataDoDestino}
-              adultosMap={adultosMap}
-              onAdultosChange={(slug, valor) =>
-                setAdultosMap((atual) => ({ ...atual, [slug]: valor }))
-              }
-              criancasMap={criancasMap}
-              onCriancasChange={(slug, valor) => {
-                setCriancasMap((atual) => ({ ...atual, [slug]: valor }));
-                setIdadesCriancasMap((atual) => {
-                  const atuais = atual[slug] ?? [];
-                  const proximas = Array.from(
-                    { length: Math.max(valor, 0) },
-                    (_, i) => atuais[i] ?? 0,
-                  );
-                  return { ...atual, [slug]: proximas };
-                });
-              }}
-              idadesCriancasMap={idadesCriancasMap}
-              onIdadeCriancaChange={(slug, indice, idade) =>
-                setIdadesCriancasMap((atual) => {
-                  const atuais = [...(atual[slug] ?? [])];
-                  atuais[indice] = idade;
-                  return { ...atual, [slug]: atuais };
-                })
-              }
-              interessesMap={interessesMap}
-              onToggleInteresse={toggleInteresseDoDestino}
-              inclusosMap={inclusosMap}
-              onToggleIncluso={toggleInclusoDoDestino}
-              contextoDestinoMap={contextoDestinoMap}
-              onContextoDestinoChange={(slug, valor) =>
-                setContextoDestinoMap((atual) => ({ ...atual, [slug]: valor }))
-              }
-              onVoltar={() => irPara("selecao")}
-              onAvancar={() => irPara("resumo")}
-            />
-          )}
-
-          {step === "resumo" && (
-            <ResumoStep
-              destinosSelecionados={destinosSelecionados}
-              selecoesMap={selecoesMap}
-              datasInicio={datasInicio}
-              datasFim={datasFim}
-              adultosMap={adultosMap}
-              criancasMap={criancasMap}
-              interessesMap={interessesMap}
-              inclusosMap={inclusosMap}
-              contextoDestinoMap={contextoDestinoMap}
-              onVoltar={() => irPara("calendario")}
-              onEnviar={handleEnviar}
-            />
-          )}
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 
