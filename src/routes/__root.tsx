@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CookieConsent } from "@/components/CookieConsent";
+import { FloatingWhatsappButton } from "@/components/FloatingWhatsappButton";
 import { AuthProvider } from "@/lib/auth-context";
 import appCss from "../styles.css?url";
 
@@ -46,6 +47,7 @@ function RootComponent() {
         <Outlet />
         <Footer />
         <CookieConsent />
+        <FloatingWhatsappButton />
       </AuthProvider>
     </RootDocument>
   );
