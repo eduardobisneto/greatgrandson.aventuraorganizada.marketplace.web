@@ -69,6 +69,7 @@ export function DestinosNavDropdown({
 }) {
   const [aberto, setAberto] = useState(false);
   const [paisAtivo, setPaisAtivo] = useState(GRUPOS[0]?.pais);
+  const [estadoAtivo, setEstadoAtivo] = useState(GRUPOS[0]?.estados[0]?.sigla);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const ref = useRef<HTMLDivElement>(null);
   const isActive = pathname.startsWith("/destinos");
@@ -85,28 +86,21 @@ export function DestinosNavDropdown({
   }, [mobile]);
 
   /**
-   * Lista de estados > cidades de UM país — usada tanto empilhada (mobile,
-   * um bloco por país) quanto na coluna da direita do painel desktop
-   * (só do país ativo, ao estilo "duas colunas" do concorrente).
+   * Lista de estados > cidades de UM país, empilhados — usada só no menu
+   * mobile (accordion simples, sem colunas: aqui não faz sentido replicar
+   * o cascateamento de 3 colunas do desktop).
    */
   function renderEstados(
     grupoPais: GrupoPais | undefined,
     onClickDestino: () => void,
-    variante: "claro" | "escuro" = "claro",
   ) {
     if (!grupoPais) return null;
-    const corEstado =
-      variante === "escuro" ? "text-white/90" : "text-muted-foreground";
-    const corCidade =
-      variante === "escuro"
-        ? "text-white hover:bg-white/25 hover:text-white"
-        : "text-foreground hover:bg-secondary hover:text-primary";
 
     return (
       <div className="space-y-3">
         {grupoPais.estados.map((grupoEstado) => (
           <div key={grupoEstado.sigla}>
-            <p className={`text-xs font-semibold ${corEstado}`}>
+            <p className="text-xs font-semibold text-muted-foreground">
               {grupoEstado.estado}
             </p>
             <div className="mt-1 flex flex-col">
@@ -116,7 +110,7 @@ export function DestinosNavDropdown({
                   to="/destinos/$slug"
                   params={{ slug: destino.slug }}
                   onClick={onClickDestino}
-                  className={`rounded px-1.5 py-1 text-sm transition-colors ${corCidade}`}
+                  className="rounded px-1.5 py-1 text-sm text-foreground transition-colors hover:bg-secondary hover:text-primary"
                 >
                   {nomeCidade(destino.nome)}
                 </Link>
@@ -126,6 +120,38 @@ export function DestinosNavDropdown({
         ))}
       </div>
     );
+  }
+
+  /**
+   * Só as cidades de UM estado — terceira coluna do painel desktop.
+   * Espelha o mesmo comportamento da coluna de país: passar o mouse (ou
+   * clicar) num estado troca o que aparece aqui, sem navegar.
+   */
+  function renderCidades(
+    grupoEstado: GrupoEstado | undefined,
+    onClickDestino: () => void,
+  ) {
+    if (!grupoEstado) return null;
+    return (
+      <div className="flex flex-col">
+        {grupoEstado.destinos.map((destino) => (
+          <Link
+            key={destino.slug}
+            to="/destinos/$slug"
+            params={{ slug: destino.slug }}
+            onClick={onClickDestino}
+            className="rounded px-2 py-1.5 text-sm text-white transition-colors hover:bg-white/25 hover:text-white"
+          >
+            {nomeCidade(destino.nome)}
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
+  function selecionarPais(pais: string) {
+    setPaisAtivo(pais);
+    setEstadoAtivo(GRUPOS.find((g) => g.pais === pais)?.estados[0]?.sigla);
   }
 
   if (mobile) {
@@ -160,6 +186,9 @@ export function DestinosNavDropdown({
   }
 
   const grupoPaisAtivo = GRUPOS.find((g) => g.pais === paisAtivo) ?? GRUPOS[0];
+  const grupoEstadoAtivo =
+    grupoPaisAtivo?.estados.find((e) => e.sigla === estadoAtivo) ??
+    grupoPaisAtivo?.estados[0];
 
   return (
     <div ref={ref} className="relative">
@@ -183,15 +212,15 @@ export function DestinosNavDropdown({
       </button>
 
       {aberto && (
-        <div className="absolute left-0 top-full mt-2 flex w-[30rem] overflow-hidden rounded-xl bg-[#009739]/95 shadow-lg backdrop-blur-sm">
-          {/* Coluna dos países — hover troca o que aparece na coluna da direita, igual ao menu do concorrente. */}
-          <div className="w-36 shrink-0 space-y-0.5 border-r border-white/15 p-3">
+        <div className="absolute left-0 top-full mt-2 flex overflow-hidden rounded-xl bg-[#009739]/95 shadow-lg backdrop-blur-sm">
+          {/* Coluna dos países — hover troca o que aparece na coluna do meio, igual ao menu do concorrente. */}
+          <div className="w-32 shrink-0 space-y-0.5 border-r border-white/15 p-3">
             {GRUPOS.map((grupoPais) => (
               <button
                 key={grupoPais.pais}
                 type="button"
-                onMouseEnter={() => setPaisAtivo(grupoPais.pais)}
-                onClick={() => setPaisAtivo(grupoPais.pais)}
+                onMouseEnter={() => selecionarPais(grupoPais.pais)}
+                onClick={() => selecionarPais(grupoPais.pais)}
                 className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
                   grupoPaisAtivo?.pais === grupoPais.pais
                     ? "bg-white/25 text-white"
@@ -203,8 +232,27 @@ export function DestinosNavDropdown({
             ))}
           </div>
 
-          <div className="flex-1 p-4">
-            {renderEstados(grupoPaisAtivo, () => setAberto(false), "escuro")}
+          {/* Coluna dos estados — mesmo comportamento: hover troca a coluna de cidades. */}
+          <div className="w-40 shrink-0 space-y-0.5 border-r border-white/15 p-3">
+            {grupoPaisAtivo?.estados.map((grupoEstado) => (
+              <button
+                key={grupoEstado.sigla}
+                type="button"
+                onMouseEnter={() => setEstadoAtivo(grupoEstado.sigla)}
+                onClick={() => setEstadoAtivo(grupoEstado.sigla)}
+                className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
+                  grupoEstadoAtivo?.sigla === grupoEstado.sigla
+                    ? "bg-white/25 text-white"
+                    : "text-white/80 hover:bg-white/25 hover:text-white"
+                }`}
+              >
+                {grupoEstado.estado}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-40 p-3">
+            {renderCidades(grupoEstadoAtivo, () => setAberto(false))}
           </div>
         </div>
       )}
