@@ -38,9 +38,9 @@ export interface Destino {
   pais: string;
   estado: Estado;
   /**
-   * Tipo do roteiro em destaque desse destino na home (ver Hero.tsx) —
-   * "Viagem em Família para Bonito · 4 noites" em vez de um título
-   * genérico. Um destino pode ter vários roteiros no futuro; por
+   * Tipo da experiência em destaque desse destino na home (ver Hero.tsx)
+   * — "Viagem em Família para Bonito · 4 noites" em vez de um título
+   * genérico. Um destino pode ter várias experiências no futuro; por
    * enquanto, um tipo fixo por destino.
    */
   tipoViagem: TipoViagem;
