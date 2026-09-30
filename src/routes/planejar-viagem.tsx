@@ -25,6 +25,7 @@ import {
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
 import { PagamentoModal } from "@/components/PagamentoModal";
+import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { RequireAuth } from "@/components/RequireAuth";
 import { destinos } from "@/data/destinos";
 import {
@@ -1327,8 +1328,6 @@ function ResumoStep({
   );
 }
 
-const PLANOS_POR_PAGINA = 5;
-
 function ListaPlanosView({
   nome,
   planos,
@@ -1340,51 +1339,40 @@ function ListaPlanosView({
   onNovoPlanejamento: () => void;
   onAbrirPlano: (plano: PlanoViagem) => void;
 }) {
-  const [pagina, setPagina] = useState(1);
   // Sempre do mais novo pro mais antigo (getPlanosDoUsuario já entrega
-  // assim, mas a ordenação fica explícita aqui também).
+  // assim, mas a ordenação fica explícita aqui também) — o carrossel
+  // corre a partir do mais recente, na ponta esquerda.
   const planosOrdenados = [...planos].sort((a, b) =>
     b.criadoEm.localeCompare(a.criadoEm),
-  );
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(planosOrdenados.length / PLANOS_POR_PAGINA),
-  );
-  const paginaAtual = Math.min(pagina, totalPaginas);
-  const planosDaPagina = planosOrdenados.slice(
-    (paginaAtual - 1) * PLANOS_POR_PAGINA,
-    paginaAtual * PLANOS_POR_PAGINA,
   );
 
   return (
     <>
-      <section className="section-padding">
-        <div className="container-tight">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-                Minhas viagens
-              </span>
-              <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-                Suas viagens, {nome}
-              </h1>
-            </div>
-            <button
-              type="button"
-              onClick={onNovoPlanejamento}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              Novo planejamento de viagem
-            </button>
-          </div>
-        </div>
-      </section>
+      <PageHeroBanner
+        seed="minhas-viagens"
+        eyebrow="Minhas viagens"
+        titulo={`Suas viagens, ${nome}`}
+      >
+        <button
+          type="button"
+          onClick={onNovoPlanejamento}
+          className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Novo planejamento de viagem
+        </button>
+      </PageHeroBanner>
 
       <section className="section-padding bg-sand-100">
-        <div className="container-tight">
-          <div className="mx-auto max-w-2xl space-y-4">
-            {planosDaPagina.map((plano) => {
+        {planosOrdenados.length === 0 ? (
+          <div className="container-tight">
+            <p className="text-center text-sm text-muted-foreground">
+              Você ainda não tem viagens planejadas.
+            </p>
+          </div>
+        ) : (
+          <CarrosselHorizontal>
+            {planosOrdenados.map((plano) => {
               const nomesDestinos = plano.selecoes
                 .map(
                   (s) => destinos.find((d) => d.slug === s.destinoSlug)?.nome,
@@ -1397,61 +1385,25 @@ function ListaPlanosView({
                   key={plano.id}
                   type="button"
                   onClick={() => onAbrirPlano(plano)}
-                  className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary"
+                  className="w-72 shrink-0 snap-start rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary sm:w-80 md:w-96"
                 >
-                  <div>
-                    <p className="font-display text-lg">
-                      {nomesDestinos || "Plano de viagem"}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Enviado em{" "}
-                      {new Date(plano.criadoEm).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
+                  <p className="font-display text-lg">
+                    {nomesDestinos || "Plano de viagem"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Enviado em{" "}
+                    {new Date(plano.criadoEm).toLocaleDateString("pt-BR")}
+                  </p>
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(plano))}`}
+                    className={`mt-3 inline-block rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(plano))}`}
                   >
                     {ETAPA_LABELS[etapaAtualDoPlano(plano)]}
                   </span>
                 </button>
               );
             })}
-
-            {planosOrdenados.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground">
-                Você ainda não tem viagens planejadas.
-              </p>
-            )}
-
-            {totalPaginas > 1 && (
-              <div className="flex items-center justify-between border-t border-border pt-4">
-                <button
-                  type="button"
-                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                  disabled={paginaAtual === 1}
-                  className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground disabled:cursor-default disabled:opacity-40"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Mais recentes
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  Página {paginaAtual} de {totalPaginas}
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPagina((p) => Math.min(totalPaginas, p + 1))
-                  }
-                  disabled={paginaAtual === totalPaginas}
-                  className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground disabled:cursor-default disabled:opacity-40"
-                >
-                  Mais antigas
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+          </CarrosselHorizontal>
+        )}
       </section>
     </>
   );
