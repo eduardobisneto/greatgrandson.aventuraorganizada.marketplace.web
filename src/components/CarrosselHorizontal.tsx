@@ -1,23 +1,35 @@
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { ComponentType, ReactNode, SVGProps } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties, ComponentType, ReactNode, SVGProps } from "react";
+
+// useLayoutEffect mede e aplica o breakout antes do navegador pintar a
+// tela (evita um "pulo" visível do carrossel estreito pro full-bleed);
+// no SSR isso vira useEffect pra não disparar o aviso do React sobre
+// useLayoutEffect não fazer nada no servidor.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
  * Carrossel horizontal full-bleed — scroll nativo (swipe/wheel/trackpad)
- * com snap, mais setas de navegação (mesmo comportamento do Hero). É
- * renderizado full-width de propósito: quem usa deve colocar esse
- * componente FORA do `container-tight`, direto como filho da `<section>`
- * — nunca dentro do container, e nunca com `w-screen`/`100vw`: 100vw
- * inclui a largura da barra de rolagem vertical do navegador, o que
- * criava overflow horizontal na página inteira (barra de rolagem
- * indevida no rodapé). Usando `100%` (da própria section, que já é
- * full-width) esse problema não existe.
+ * com snap, mais setas de navegação (mesmo comportamento do Hero).
  *
- * O wrapper é sempre `w-full`: o carrossel ocupa a largura inteira
- * disponível e as setas ficam sempre coladas nas extremidades da tela
- * (ou da section), mesmo com um único card — nunca encolhe pra virar uma
- * ilha centralizada no meio da tela. (Uma versão anterior usava `w-fit`
- * pra "colar" as setas nos cards quando havia poucos — mas isso fazia o
+ * Full-bleed de verdade, mesmo aninhado: o componente mede a distância
+ * real até a borda esquerda da viewport (`getBoundingClientRect().left`)
+ * e cancela com margin negativa, esticando a largura pra
+ * `document.documentElement.clientWidth`. Isso faz as setas caírem nas
+ * extremidades da tela não importa quantos `container-tight`/`max-w-*`
+ * estreitos estejam por cima na árvore — quem usa não precisa mais
+ * lembrar de renderizar isso fora de um container estreito (esse cuidado
+ * já causou o mesmo bug reaparecer em telas diferentes n vezes). Nunca
+ * usa `w-screen`/`100vw` pra isso: 100vw inclui a largura da barra de
+ * rolagem vertical do navegador, o que criava overflow horizontal na
+ * página inteira (barra de rolagem indevida no rodapé) — `clientWidth`
+ * já exclui a barra, e `rect.left` já é relativo à viewport de verdade,
+ * então o cálculo funciona mesmo dentro de containers assimétricos.
+ *
+ * O wrapper nunca encolhe pra virar uma ilha centralizada no meio da
+ * tela, mesmo com um único card. (Uma versão anterior usava `w-fit` pra
+ * "colar" as setas nos cards quando havia poucos — mas isso fazia o
  * carrossel inteiro encolher e centralizar no meio da section em vez de
  * ocupar a extensão da tela, o problema oposto. A combinação certa é
  * largura cheia + gutter pequeno e fixo, não encolher o container.)
@@ -47,9 +59,40 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  * direita).
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const trilhaRef = useRef<HTMLDivElement>(null);
   const [podeVoltar, setPodeVoltar] = useState(false);
   const [podeAvancar, setPodeAvancar] = useState(false);
+  const [breakoutStyle, setBreakoutStyle] = useState<CSSProperties>({});
+
+  useIsomorphicLayoutEffect(() => {
+    // Mede a partir do PAI, não do próprio wrapper: depois que a margin
+    // negativa é aplicada, o wrapper passa a começar em x=0 (efeito
+    // esperado). Medir o próprio wrapper de novo nessas remedições
+    // seguintes leria essa posição já corrigida e zeraria a margin de
+    // volta — um loop que se autocancela. O pai nunca é estilizado por
+    // esse componente, então sua posição continua confiável sempre.
+    function atualizarBreakout() {
+      const pai = wrapperRef.current?.parentElement;
+      if (!pai) return;
+      const rect = pai.getBoundingClientRect();
+      setBreakoutStyle({
+        marginLeft: -rect.left,
+        width: document.documentElement.clientWidth,
+      });
+    }
+
+    atualizarBreakout();
+    window.addEventListener("resize", atualizarBreakout);
+    const observer = new ResizeObserver(atualizarBreakout);
+    if (wrapperRef.current?.parentElement) {
+      observer.observe(wrapperRef.current.parentElement);
+    }
+    return () => {
+      window.removeEventListener("resize", atualizarBreakout);
+      observer.disconnect();
+    };
+  }, []);
 
   // Sem conteúdo suficiente pra rolar (poucos cards, ou já na ponta), a
   // seta correspondente fica desabilitada em vez de não fazer nada —
@@ -86,7 +129,7 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative w-full">
+    <div ref={wrapperRef} className="relative w-full" style={breakoutStyle}>
       <div
         ref={trilhaRef}
         className="flex w-full snap-x snap-mandatory justify-center-safe gap-4 overflow-x-auto px-12 pb-2 scroll-px-12 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-16 sm:scroll-px-16 [&::-webkit-scrollbar]:hidden"
