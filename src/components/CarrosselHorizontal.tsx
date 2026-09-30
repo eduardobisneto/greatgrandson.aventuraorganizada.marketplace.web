@@ -35,6 +35,16 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  * fixo é só o suficiente pra seta não ficar em cima do card (ela mede
  * ~40px em telas pequenas, ~52px a partir do `sm`, incluindo o
  * `left-2`/`left-4`) — nada além disso.
+ *
+ * `justify-center-safe` (`justify-content: safe center`) centraliza os
+ * cards quando eles não preenchem a largura toda (poucos cards, trilho
+ * full-bleed) — sem isso ficavam encostados à esquerda, com um vão vazio
+ * grande à direita. O "safe" é o que faz isso funcionar também quando os
+ * cards SÃO muitos (overflow): nesse caso o navegador ignora o
+ * centralizar e volta pro alinhamento normal à esquerda, senão o
+ * primeiro card ficaria cortado ao abrir a página (overflow simétrico
+ * de um flex centralizado tira conteúdo dos dois lados, não só da
+ * direita).
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   const trilhaRef = useRef<HTMLDivElement>(null);
@@ -79,7 +89,7 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
     <div className="relative w-full">
       <div
         ref={trilhaRef}
-        className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-12 pb-2 scroll-px-12 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-16 sm:scroll-px-16 [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory justify-center-safe gap-4 overflow-x-auto px-12 pb-2 scroll-px-12 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-16 sm:scroll-px-16 [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
