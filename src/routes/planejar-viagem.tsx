@@ -2333,42 +2333,42 @@ function DetalhePlanoView({
 
   return (
     <>
-      <section className="section-padding print:hidden">
-        <div className="container-tight">
-          <div className="mx-auto max-w-2xl">
-            <button
-              type="button"
-              onClick={onVoltar}
-              className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar para minhas viagens
-            </button>
+      <div className="print:hidden">
+        <PageHeroBanner
+          seed={`plano-${plano.id}`}
+          eyebrow="Planejar viagem"
+          titulo={`Viagem de ${nomeUsuario} para ${juntarNomes(nomesDestinos)}`}
+          descricao={
+            inicioGeral && fimGeral
+              ? `${new Date(`${inicioGeral}T00:00:00`).toLocaleDateString("pt-BR")} a ${new Date(`${fimGeral}T00:00:00`).toLocaleDateString("pt-BR")}`
+              : "Datas a combinar"
+          }
+        >
+          <button
+            type="button"
+            onClick={onVoltar}
+            className="order-first -mt-2 mb-2 inline-flex w-fit items-center gap-2 text-sm font-medium text-sand-50/90 transition-colors hover:text-sand-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar para minhas viagens
+          </button>
+        </PageHeroBanner>
+      </div>
 
-            <div className="mt-6 text-center">
-              <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-                Planejar viagem
-              </span>
-              <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-                Viagem de {nomeUsuario} para {juntarNomes(nomesDestinos)}
-              </h1>
-              <p className="mt-4 text-muted-foreground">
-                {inicioGeral && fimGeral
-                  ? `${new Date(`${inicioGeral}T00:00:00`).toLocaleDateString("pt-BR")} a ${new Date(`${fimGeral}T00:00:00`).toLocaleDateString("pt-BR")}`
-                  : "Datas a combinar"}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
+      <section className="section-padding bg-sand-100">
+        <div className="container-tight">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-sm text-muted-foreground print:hidden">
+              <span>
                 Enviado em{" "}
-                {new Date(plano.criadoEm).toLocaleDateString("pt-BR")}.
-              </p>
-              <p className="mt-2">
-                <span
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(planoAtual))}`}
-                >
-                  {ETAPA_LABELS[etapaAtualDoPlano(planoAtual)]}
-                </span>
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
+                {new Date(plano.criadoEm).toLocaleDateString("pt-BR")}
+              </span>
+              <span
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${corDaEtapa(etapaAtualDoPlano(planoAtual))}`}
+              >
+                {ETAPA_LABELS[etapaAtualDoPlano(planoAtual)]}
+              </span>
+              <span>
                 Previsão de retorno até{" "}
                 {new Date(
                   new Date(plano.criadoEm).getTime() +
@@ -2382,16 +2382,9 @@ function DetalhePlanoView({
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-                .
-              </p>
+              </span>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="section-padding bg-sand-100">
-        <div className="container-tight">
-          <div className="mx-auto max-w-3xl">
             <div className="flex items-center justify-between gap-1 print:hidden">
               {CONSULTA_STEP_ORDER.map((s, index) => {
                 const ativo = s === stepConsulta;
