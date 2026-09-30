@@ -80,16 +80,34 @@ export function DestinosNavDropdown({
     return () => document.removeEventListener("mousedown", handleClickFora);
   }, [mobile]);
 
-  function renderGrupos(onClickDestino: () => void) {
+  /**
+   * "escuro" é um teste de estilo (inspirado no menu do adventureclub):
+   * painel em verde-bandeira com texto branco, só no dropdown desktop —
+   * o menu mobile mantém a paleta padrão do site.
+   */
+  function renderGrupos(
+    onClickDestino: () => void,
+    variante: "claro" | "escuro" = "claro",
+  ) {
+    const corPais = variante === "escuro" ? "text-white/70" : "text-primary";
+    const corEstado =
+      variante === "escuro" ? "text-white/90" : "text-muted-foreground";
+    const corCidade =
+      variante === "escuro"
+        ? "text-white hover:bg-white/15 hover:text-white"
+        : "text-foreground hover:bg-secondary hover:text-primary";
+
     return GRUPOS.map((grupoPais) => (
       <div key={grupoPais.pais}>
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+        <p
+          className={`text-xs font-semibold uppercase tracking-wide ${corPais}`}
+        >
           {grupoPais.pais}
         </p>
         <div className="mt-2 space-y-3">
           {grupoPais.estados.map((grupoEstado) => (
             <div key={grupoEstado.sigla}>
-              <p className="text-xs font-semibold text-muted-foreground">
+              <p className={`text-xs font-semibold ${corEstado}`}>
                 {grupoEstado.estado}
               </p>
               <div className="mt-1 flex flex-col">
@@ -99,7 +117,7 @@ export function DestinosNavDropdown({
                     to="/destinos/$slug"
                     params={{ slug: destino.slug }}
                     onClick={onClickDestino}
-                    className="rounded px-1.5 py-1 text-sm text-foreground transition-colors hover:bg-secondary hover:text-primary"
+                    className={`rounded px-1.5 py-1 text-sm transition-colors ${corCidade}`}
                   >
                     {nomeCidade(destino.nome)}
                   </Link>
@@ -152,8 +170,8 @@ export function DestinosNavDropdown({
       </button>
 
       {aberto && (
-        <div className="absolute left-0 top-full mt-2 w-72 space-y-4 rounded-xl border border-border bg-background p-4 shadow-lg">
-          {renderGrupos(() => setAberto(false))}
+        <div className="absolute left-0 top-full mt-2 w-72 space-y-4 rounded-xl bg-[#009739] p-4 shadow-lg">
+          {renderGrupos(() => setAberto(false), "escuro")}
         </div>
       )}
     </div>
