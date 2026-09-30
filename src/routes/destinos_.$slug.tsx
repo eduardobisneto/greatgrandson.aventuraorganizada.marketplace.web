@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, Check, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, MapPin, Users } from "lucide-react";
 
 import {
   CarrosselHorizontal,
@@ -9,6 +9,10 @@ import {
 import { WhatsappButton } from "@/components/WhatsappButton";
 import { getDestino } from "@/data/destinos";
 import { getExperienciasPorDestino } from "@/data/experiencias";
+import {
+  descricaoExperiencia,
+  tituloExperiencia,
+} from "@/lib/experiencia-destaque";
 
 export const Route = createFileRoute("/destinos_/$slug")({
   loader: ({ params }) => {
@@ -44,8 +48,16 @@ function DestinoRoteiroPage() {
             <ArrowLeft className="h-4 w-4" />
             Voltar para destinos
           </Link>
-          <h1 className="text-balance text-4xl md:text-5xl">{destino.nome}</h1>
-          <p className="text-lg text-forest-100">{destino.tagline}</p>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-forest-800/60 px-4 py-2 text-sm font-medium uppercase tracking-wide backdrop-blur-sm">
+            <MapPin className="h-4 w-4 text-forest-300" />
+            <span>{destino.nome}</span>
+          </div>
+          <h1 className="text-balance text-4xl md:text-5xl">
+            {tituloExperiencia(destino)}
+          </h1>
+          <p className="max-w-2xl text-lg text-forest-100">
+            {descricaoExperiencia(destino)}
+          </p>
         </div>
       </section>
 
@@ -94,10 +106,6 @@ function DestinoRoteiroPage() {
                 </li>
               ))}
             </ul>
-
-            <div className="mt-6">
-              <WhatsappButton variant="solid" />
-            </div>
           </aside>
         </div>
       </section>
