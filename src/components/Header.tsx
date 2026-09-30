@@ -27,14 +27,18 @@ const navLinks = [
 
 /**
  * Rotas cuja primeira seção é um banner full-bleed com imagem (Hero da
- * home, topo da página do destino, topo da página da experiência) — só
- * nelas o header flutua transparente sobre a imagem, igual ao menu do
- * concorrente. Nas demais páginas (sem imagem no topo) ele continua
- * sólido, senão o texto claro ficaria ilegível sobre um fundo claro.
+ * home, topo da página do destino, topo da página da experiência, e o
+ * PageHeroBanner das páginas institucionais) — só nelas o header flutua
+ * transparente sobre a imagem, igual ao menu do concorrente. Nas demais
+ * páginas (sem imagem no topo) ele continua sólido, senão o texto claro
+ * ficaria ilegível sobre um fundo claro.
  */
 function ehRotaComHeroNoTopo(pathname: string): boolean {
   return (
     pathname === "/" ||
+    pathname === "/experiencias" ||
+    pathname === "/sobre" ||
+    pathname === "/contato" ||
     /^\/destinos\/[^/]+$/.test(pathname) ||
     /^\/experiencias\/[^/]+$/.test(pathname)
   );
