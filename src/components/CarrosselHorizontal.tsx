@@ -26,6 +26,14 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  * primeiro card, "comendo" o respiro do padding — invisível quando o card
  * é uma imagem que já vai até a borda, mas expõe a seta por cima do
  * conteúdo em cards com texto perto da borda (ex: lista de viagens).
+ *
+ * O gutter (`px-12 sm:px-16`) é um valor fixo, não escalando com a
+ * largura da tela: existia uma versão anterior que alinhava com a borda
+ * do `container-tight` (crescendo em telas largas), mas isso deixava um
+ * vão enorme entre a seta e o primeiro card em monitores largos. O valor
+ * fixo é só o suficiente pra seta não ficar em cima do card (ela mede
+ * ~40px em telas pequenas, ~52px a partir do `sm`, incluindo o
+ * `left-2`/`left-4`) — nada além disso.
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   const trilhaRef = useRef<HTMLDivElement>(null);
@@ -44,7 +52,7 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
     <div className="relative mx-auto w-fit max-w-full">
       <div
         ref={trilhaRef}
-        className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 scroll-px-6 [-ms-overflow-style:none] [scrollbar-width:none] lg:px-[max(1.5rem,calc((100%-72rem)/2+1.5rem))] lg:scroll-px-[max(1.5rem,calc((100%-72rem)/2+1.5rem))] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-12 pb-2 scroll-px-12 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-16 sm:scroll-px-16 [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
