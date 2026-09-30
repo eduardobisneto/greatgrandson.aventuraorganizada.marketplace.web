@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { AtracoesGallery } from "@/components/AtracoesGallery";
 import { Hero } from "@/components/Hero";
 import { OrganizacaoSection } from "@/components/OrganizacaoSection";
 import { ExperienciasGallery } from "@/components/ExperienciasGallery";
@@ -15,6 +16,7 @@ function HomePage() {
       <Hero />
       <OrganizacaoSection />
       <ExperienciasGallery />
+      <AtracoesGallery />
       <section className="section-padding bg-forest-900 text-sand-50">
         <div className="container-tight flex flex-col items-center gap-6 text-center">
           <h2 className="text-balance text-3xl md:text-4xl">

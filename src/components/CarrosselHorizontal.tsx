@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useRef } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
@@ -67,12 +67,15 @@ export const cartaoCarrosselClassName =
  */
 export function ConteudoCartaoOverlay({
   titulo,
+  /** Ex: nome do destino, quando o card representa algo dentro de um lugar (uma atração, por exemplo). */
+  subtitulo,
   descricao,
   imagem,
   alt,
   icon: Icon,
 }: {
   titulo: string;
+  subtitulo?: string | undefined;
   descricao: string;
   imagem?: string | undefined;
   alt?: string | undefined;
@@ -95,6 +98,12 @@ export function ConteudoCartaoOverlay({
         <Icon className="absolute right-4 top-4 h-8 w-8 text-forest-500" />
       )}
       <div className="absolute bottom-0 left-0 right-0 p-5 text-sand-50">
+        {subtitulo && (
+          <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-forest-300">
+            <MapPin className="h-3 w-3 shrink-0" />
+            {subtitulo}
+          </p>
+        )}
         <h3 className="font-display text-xl">{titulo}</h3>
         <p className="mt-1 text-sm text-forest-100">{descricao}</p>
       </div>
