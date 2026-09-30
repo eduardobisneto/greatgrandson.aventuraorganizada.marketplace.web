@@ -140,7 +140,7 @@ export function DestinosNavDropdown({
             to="/destinos/$slug"
             params={{ slug: destino.slug }}
             onClick={onClickDestino}
-            className="rounded px-2 py-1.5 text-sm text-white transition-colors hover:bg-white/25 hover:text-white"
+            className="rounded px-2 py-1.5 text-sm text-[#009739] transition-colors hover:bg-[#009739]/10"
           >
             {nomeCidade(destino.nome)}
           </Link>
@@ -212,9 +212,9 @@ export function DestinosNavDropdown({
       </button>
 
       {aberto && (
-        <div className="absolute left-0 top-full mt-2 flex overflow-hidden rounded-xl bg-[#009739]/95 shadow-lg backdrop-blur-sm">
+        <div className="absolute left-0 top-full mt-2 flex overflow-hidden rounded-xl bg-white/95 shadow-lg backdrop-blur-sm">
           {/* Coluna dos países — hover troca o que aparece na coluna do meio, igual ao menu do concorrente. */}
-          <div className="w-32 shrink-0 space-y-0.5 border-r border-white/15 p-3">
+          <div className="w-32 shrink-0 space-y-0.5 border-r border-border p-3">
             {GRUPOS.map((grupoPais) => (
               <button
                 key={grupoPais.pais}
@@ -223,8 +223,8 @@ export function DestinosNavDropdown({
                 onClick={() => selecionarPais(grupoPais.pais)}
                 className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
                   grupoPaisAtivo?.pais === grupoPais.pais
-                    ? "bg-white/25 text-white"
-                    : "text-white/80 hover:bg-white/25 hover:text-white"
+                    ? "bg-[#009739]/10 text-[#009739]"
+                    : "text-[#009739]/70 hover:bg-[#009739]/10 hover:text-[#009739]"
                 }`}
               >
                 {grupoPais.pais}
@@ -233,7 +233,7 @@ export function DestinosNavDropdown({
           </div>
 
           {/* Coluna dos estados — mesmo comportamento: hover troca a coluna de cidades. */}
-          <div className="w-40 shrink-0 space-y-0.5 border-r border-white/15 p-3">
+          <div className="w-40 shrink-0 space-y-0.5 border-r border-border p-3">
             {grupoPaisAtivo?.estados.map((grupoEstado) => (
               <button
                 key={grupoEstado.sigla}
@@ -242,8 +242,8 @@ export function DestinosNavDropdown({
                 onClick={() => setEstadoAtivo(grupoEstado.sigla)}
                 className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
                   grupoEstadoAtivo?.sigla === grupoEstado.sigla
-                    ? "bg-white/25 text-white"
-                    : "text-white/80 hover:bg-white/25 hover:text-white"
+                    ? "bg-[#009739]/10 text-[#009739]"
+                    : "text-[#009739]/70 hover:bg-[#009739]/10 hover:text-[#009739]"
                 }`}
               >
                 {grupoEstado.estado}
