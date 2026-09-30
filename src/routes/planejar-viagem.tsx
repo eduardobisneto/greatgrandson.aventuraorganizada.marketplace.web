@@ -608,38 +608,40 @@ function SelecaoStep({
               Pode escolher mais de um — mesmo que sejam em datas diferentes, a
               gente ajusta isso no próximo passo.
             </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {destinos.map((destino) => {
-                const selecionado = destino.slug in selecoesMap;
-                return (
-                  <button
-                    key={destino.slug}
-                    type="button"
-                    onClick={() => onToggleDestino(destino.slug)}
-                    className={`relative overflow-hidden rounded-2xl border-2 text-left transition-all ${
-                      selecionado
-                        ? "border-primary"
-                        : "border-transparent hover:border-border"
-                    }`}
-                  >
-                    <img
-                      src={destino.imagem}
-                      alt={destino.alt}
-                      className="aspect-[4/3] w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-forest-900/80 via-forest-900/10 to-transparent" />
-                    {selecionado && (
-                      <div className="absolute right-3 top-3 rounded-full bg-primary p-1.5 text-primary-foreground">
-                        <Check className="h-4 w-4" />
-                      </div>
-                    )}
-                    <p className="absolute bottom-3 left-4 right-4 font-display text-lg text-sand-50">
-                      {destino.nome}
-                    </p>
-                  </button>
-                );
-              })}
+            <div className="mt-6">
+              <CarrosselHorizontal>
+                {destinos.map((destino) => {
+                  const selecionado = destino.slug in selecoesMap;
+                  return (
+                    <button
+                      key={destino.slug}
+                      type="button"
+                      onClick={() => onToggleDestino(destino.slug)}
+                      className={`${cartaoCarrosselClassName} border-2 text-left transition-all ${
+                        selecionado
+                          ? "border-primary"
+                          : "border-transparent hover:border-border"
+                      }`}
+                    >
+                      <img
+                        src={destino.imagem}
+                        alt={destino.alt}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-forest-900/80 via-forest-900/10 to-transparent" />
+                      {selecionado && (
+                        <div className="absolute right-3 top-3 rounded-full bg-primary p-1.5 text-primary-foreground">
+                          <Check className="h-4 w-4" />
+                        </div>
+                      )}
+                      <p className="absolute bottom-3 left-4 right-4 font-display text-lg text-sand-50">
+                        {destino.nome}
+                      </p>
+                    </button>
+                  );
+                })}
+              </CarrosselHorizontal>
             </div>
           </div>
 
