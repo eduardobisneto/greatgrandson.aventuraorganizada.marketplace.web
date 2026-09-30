@@ -27,12 +27,7 @@ export interface SelecaoDestino {
 }
 
 export type CategoriaSugestao =
-  | "voo"
-  | "transfer"
-  | "acomodacao"
-  | "refeicao"
-  | "passeio"
-  | "geral";
+  "voo" | "transfer" | "acomodacao" | "refeicao" | "passeio" | "geral";
 
 /** Uma opção de resposta pra uma pergunta de múltipla escolha do analista. */
 export interface OpcaoResposta {
@@ -122,6 +117,10 @@ export interface ItemItinerario {
   duracao?: string | undefined;
   /** Endereço/localização do local — já vem enriquecido a partir da etapa 6, pra versão final (etapa 7) ter o máximo de detalhe. */
   endereco?: string | undefined;
+  /** Avaliação estilo Google Maps (0-5), quando o local tem uma — hospedagem, restaurante. */
+  avaliacao?: number | undefined;
+  /** O que fica perto — ex: "a 5 min do Rio Formoso". Ajuda o cliente a se situar na ficha impressa (etapa 7). */
+  proximidadeDe?: string | undefined;
   /**
    * Destino a que esse item pertence — a viagem pode ter vários destinos
    * (multi-destino), cada um com sua própria contagem de dias 1, 2, 3...
@@ -328,7 +327,9 @@ function horasDepois(base: string, horas: number): string {
 }
 
 /** Cada categoria de sugestão "completa" uma etapa do pipeline quando a primeira daquele tipo é revelada. */
-const CATEGORIA_PARA_ETAPA: Partial<Record<CategoriaSugestao, EtapaPlanoViagem>> = {
+const CATEGORIA_PARA_ETAPA: Partial<
+  Record<CategoriaSugestao, EtapaPlanoViagem>
+> = {
   passeio: EtapaPlanoViagem.ExperienciasDefinidas,
   voo: EtapaPlanoViagem.MobilidadeDefinida,
   transfer: EtapaPlanoViagem.MobilidadeDefinida,
@@ -375,6 +376,29 @@ function calcularValorPacote(selecoes: SelecaoDestino[]): number {
 
 const HORARIO_CAFE = "08:00";
 
+/**
+ * Avaliação (estilo Google Maps, 0-5) e o que fica perto de cada local
+ * mockado — pareado por índice com RESTAURANTES_ALMOCO/JANTAR/HOTEIS.
+ * Usado na etapa 6 (badge de nota) e na ficha impressa da etapa 7
+ * (detalhe completo), pra dar a sensação de lugar real e específico, em
+ * vez de só um nome.
+ */
+const RESTAURANTES_ALMOCO_INFO = [
+  { avaliacao: 4.6, proximidadeDe: "a 5 min a pé do centro histórico" },
+  { avaliacao: 4.4, proximidadeDe: "de frente pro Rio Formoso" },
+  { avaliacao: 4.7, proximidadeDe: "a 2 quadras da praça principal" },
+];
+const RESTAURANTES_JANTAR_INFO = [
+  { avaliacao: 4.8, proximidadeDe: "a 10 min de carro do hotel" },
+  { avaliacao: 4.5, proximidadeDe: "no centro, perto das pousadas" },
+  { avaliacao: 4.3, proximidadeDe: "a 5 min a pé do centro histórico" },
+];
+const HOTEIS_INFO = [
+  { avaliacao: 4.7, proximidadeDe: "a 15 min do centro, zona rural" },
+  { avaliacao: 4.5, proximidadeDe: "a 20 min do centro, direção à serra" },
+  { avaliacao: 4.6, proximidadeDe: "a 12 min do centro, zona rural" },
+];
+
 const RESTAURANTES_ALMOCO = [
   "Restaurante Sabor da Terra",
   "Cantina do Vale",
@@ -408,11 +432,16 @@ const CONTATOS_TRANSFER = [
   "Fernanda Lima (guia local) · (67) 99876-5432",
   "Roberto Alves (motorista) · (67) 99456-7890",
 ];
-const VEICULOS_TRANSFER = ["Van executiva", "Sedan confortável", "Micro-ônibus"];
+const VEICULOS_TRANSFER = [
+  "Van executiva",
+  "Sedan confortável",
+  "Micro-ônibus",
+];
 
 function gerarNumeroVoo(destinoSlug: string, indice: number): string {
   let hash = 0;
-  for (const char of destinoSlug) hash = (hash * 31 + char.charCodeAt(0)) % 9000;
+  for (const char of destinoSlug)
+    hash = (hash * 31 + char.charCodeAt(0)) % 9000;
   return `${1000 + ((hash + indice * 137) % 9000)}`;
 }
 
@@ -444,7 +473,9 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
     const nomeCurto = destino.nome.split(",")[0] ?? destino.nome;
     const noites = noitesEntre(selecao.dataInicio, selecao.dataFim) ?? 1;
     const atracoes = destino.atracoes;
-    const hotel = HOTEIS[indiceSelecao % HOTEIS.length]!;
+    const indiceHotel = indiceSelecao % HOTEIS.length;
+    const hotel = HOTEIS[indiceHotel]!;
+    const hotelInfo = HOTEIS_INFO[indiceHotel]!;
     const enderecoHotel = `${hotel} — Zona Rural, ${destino.nome}`;
     const enderecoCentro = `Centro, ${destino.nome}`;
     let indiceAtracao = 0;
@@ -462,37 +493,47 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
       imagem: hospedagemImg,
       duracao: "30 min",
       endereco: enderecoHotel,
+      avaliacao: hotelInfo.avaliacao,
+      proximidadeDe: hotelInfo.proximidadeDe,
     });
 
     // O prato preferido é perguntado uma vez só (ver pergunta logo
     // abaixo) e reaproveitado em todas as refeições via {{resposta}}.
     const almoco = (dia: number): Omit<ItemItinerario, "id"> => {
-      const restaurante =
-        RESTAURANTES_ALMOCO[dia % RESTAURANTES_ALMOCO.length]!;
+      const indice = dia % RESTAURANTES_ALMOCO.length;
+      const restaurante = RESTAURANTES_ALMOCO[indice]!;
+      const info = RESTAURANTES_ALMOCO_INFO[indice]!;
       const rua = RUAS_RESTAURANTES[dia % RUAS_RESTAURANTES.length]!;
       return {
         dia,
         horario: "12:30",
         local: restaurante,
-        descricao: "Prato sugerido: {{resposta}}. Avise se preferir outra opção.",
+        descricao:
+          "Prato sugerido: {{resposta}}. Avise se preferir outra opção.",
         imagem: destino.imagem,
         duracao: "1h",
         endereco: `${rua}, ${100 + dia * 10} — Centro, ${destino.nome}`,
+        avaliacao: info.avaliacao,
+        proximidadeDe: info.proximidadeDe,
       };
     };
 
     const jantar = (dia: number): Omit<ItemItinerario, "id"> => {
-      const restaurante =
-        RESTAURANTES_JANTAR[dia % RESTAURANTES_JANTAR.length]!;
+      const indice = dia % RESTAURANTES_JANTAR.length;
+      const restaurante = RESTAURANTES_JANTAR[indice]!;
+      const info = RESTAURANTES_JANTAR_INFO[indice]!;
       const rua = RUAS_RESTAURANTES[(dia + 1) % RUAS_RESTAURANTES.length]!;
       return {
         dia,
         horario: "19:30",
         local: restaurante,
-        descricao: "Prato sugerido: {{resposta}}. Avise se preferir outra opção.",
+        descricao:
+          "Prato sugerido: {{resposta}}. Avise se preferir outra opção.",
         imagem: destino.imagem,
         duracao: "1h30",
         endereco: `${rua}, ${200 + dia * 10} — Centro, ${destino.nome}`,
+        avaliacao: info.avaliacao,
+        proximidadeDe: info.proximidadeDe,
       };
     };
 
@@ -525,7 +566,8 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
     });
 
     fila.push({
-      texto: "Do aeroporto até a hospedagem, você prefere transfer privativo ou compartilhado?",
+      texto:
+        "Do aeroporto até a hospedagem, você prefere transfer privativo ou compartilhado?",
       categoria: "transfer",
       opcoes: [
         { id: "privativo", label: "Privativo" },
@@ -576,13 +618,15 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
     });
 
     fila.push({
-      texto: "Pra acertar nas reservas dos restaurantes, qual tipo de prato vocês preferem?",
+      texto:
+        "Pra acertar nas reservas dos restaurantes, qual tipo de prato vocês preferem?",
       categoria: "refeicao",
       opcoes: PRATOS_SUGERIDOS.map((p) => ({ id: p.toLowerCase(), label: p })),
     });
 
     fila.push({
-      texto: "Reservamos o almoço num restaurante local bem avaliado, pertinho do roteiro da manhã.",
+      texto:
+        "Reservamos o almoço num restaurante local bem avaliado, pertinho do roteiro da manhã.",
       categoria: "refeicao",
       itemItinerario: almoco(1),
     });
@@ -630,7 +674,8 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
       });
 
       fila.push({
-        texto: "Na volta, sugerimos o almoço num restaurante bem pertinho de onde vocês vão estar.",
+        texto:
+          "Na volta, sugerimos o almoço num restaurante bem pertinho de onde vocês vão estar.",
         categoria: "refeicao",
         itemItinerario: almoco(dia),
       });
@@ -658,13 +703,15 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
       });
 
       fila.push({
-        texto: "Pra fechar o dia, reservamos um jantar num restaurante bem avaliado por quem visita a região.",
+        texto:
+          "Pra fechar o dia, reservamos um jantar num restaurante bem avaliado por quem visita a região.",
         categoria: "refeicao",
         itemItinerario: jantar(dia),
       });
 
       fila.push({
-        texto: "E pra fechar a noite, um bar com música ao vivo bem perto do hotel — topam?",
+        texto:
+          "E pra fechar a noite, um bar com música ao vivo bem perto do hotel — topam?",
         categoria: "geral",
         itemItinerario: {
           dia,
@@ -701,7 +748,10 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
     for (let i = inicioFila; i < fila.length; i++) {
       const sug = fila[i]!;
       if (sug.itemItinerario) {
-        sug.itemItinerario = { ...sug.itemItinerario, destinoSlug: destino.slug };
+        sug.itemItinerario = {
+          ...sug.itemItinerario,
+          destinoSlug: destino.slug,
+        };
       }
       if (sug.itensAutomaticos) {
         sug.itensAutomaticos = sug.itensAutomaticos.map((item) => ({
@@ -1004,7 +1054,10 @@ export function responderSugestao(
     },
   ];
 
-  const revelado = revelarProximaSugestao(interacoes, atual.filaSugestoes ?? []);
+  const revelado = revelarProximaSugestao(
+    interacoes,
+    atual.filaSugestoes ?? [],
+  );
   interacoes = revelado.interacoes;
   const filaSugestoes = revelado.filaSugestoes;
 
@@ -1062,7 +1115,10 @@ export function responderPergunta(
     },
   ];
 
-  const revelado = revelarProximaSugestao(interacoes, atual.filaSugestoes ?? []);
+  const revelado = revelarProximaSugestao(
+    interacoes,
+    atual.filaSugestoes ?? [],
+  );
   interacoes = revelado.interacoes;
   const filaSugestoes = revelado.filaSugestoes;
 
@@ -1428,8 +1484,7 @@ export function getPagamentoPorId(
   pagamentoId: string,
 ): Pagamento | null {
   return (
-    getPagamentosDoUsuario(usuarioId).find((p) => p.id === pagamentoId) ??
-    null
+    getPagamentosDoUsuario(usuarioId).find((p) => p.id === pagamentoId) ?? null
   );
 }
 

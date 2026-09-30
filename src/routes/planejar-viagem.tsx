@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Compass,
   CreditCard,
   Download,
   Loader2,
@@ -11,6 +12,7 @@ import {
   Plus,
   Send,
   Sparkles,
+  Star,
   User,
   X,
 } from "lucide-react";
@@ -49,7 +51,8 @@ import {
 
 export const Route = createFileRoute("/planejar-viagem")({
   validateSearch: (search: Record<string, unknown>) => ({
-    planoId: typeof search["planoId"] === "string" ? search["planoId"] : undefined,
+    planoId:
+      typeof search["planoId"] === "string" ? search["planoId"] : undefined,
     step: typeof search["step"] === "string" ? search["step"] : undefined,
   }),
   component: () => (
@@ -1187,9 +1190,7 @@ function ResumoStep({
     .filter((e): e is (typeof experiencias)[number] => !!e);
 
   const interessesUnicos = Array.from(
-    new Set(
-      destinosSelecionados.flatMap((slug) => interessesMap[slug] ?? []),
-    ),
+    new Set(destinosSelecionados.flatMap((slug) => interessesMap[slug] ?? [])),
   );
 
   return (
@@ -1298,22 +1299,22 @@ function ResumoStep({
       </div>
 
       <div className="flex flex-col items-center gap-4 border-t border-border pt-6 sm:flex-row sm:justify-between">
-          <button
-            type="button"
-            onClick={onVoltar}
-            className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </button>
-          <button
-            type="button"
-            onClick={onEnviar}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Enviar plano de viagem
-            <ArrowRight className="h-4 w-4" />
-          </button>
+        <button
+          type="button"
+          onClick={onVoltar}
+          className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </button>
+        <button
+          type="button"
+          onClick={onEnviar}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Enviar plano de viagem
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
@@ -1695,15 +1696,21 @@ function DetalhePlanoView({
                     className="h-full w-full object-cover"
                   />
                 </div>
-                {!isUltimo && (
-                  <div className="mt-1 w-0.5 flex-1 bg-border" />
-                )}
+                {!isUltimo && <div className="mt-1 w-0.5 flex-1 bg-border" />}
               </div>
               <div className={isUltimo ? "flex-1" : "flex-1 pb-6"}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {item.horario}
-                  {item.duracao ? ` · ${item.duracao}` : ""}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {item.horario}
+                    {item.duracao ? ` · ${item.duracao}` : ""}
+                  </p>
+                  {item.avaliacao != null && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                      <Star className="h-3 w-3 fill-current" />
+                      {item.avaliacao.toFixed(1)}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {item.local}
                 </p>
@@ -1714,6 +1721,12 @@ function DetalhePlanoView({
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />
                     {item.endereco}
+                  </p>
+                )}
+                {item.proximidadeDe && (
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Compass className="h-3.5 w-3.5 shrink-0" />
+                    {item.proximidadeDe}
                   </p>
                 )}
               </div>
@@ -1749,7 +1762,10 @@ function DetalhePlanoView({
     });
     const multiDestino = selecoesOrdenadas.length > 1;
 
-    function dataAbsoluta(dataInicioDestino: string | undefined, dia: number): string {
+    function dataAbsoluta(
+      dataInicioDestino: string | undefined,
+      dia: number,
+    ): string {
       if (!dataInicioDestino) return `Dia ${dia}`;
       const data = new Date(`${dataInicioDestino}T00:00:00`);
       data.setDate(data.getDate() + (dia - 1));
@@ -1842,9 +1858,7 @@ function DetalhePlanoView({
               {nomeUsuario}
             </p>
             <p className="text-sm">
-              <span className="font-semibold text-foreground">
-                Destino(s):
-              </span>{" "}
+              <span className="font-semibold text-foreground">Destino(s):</span>{" "}
               {juntarNomes(nomesDestinos)}
             </p>
             <p className="text-sm">
@@ -1855,18 +1869,16 @@ function DetalhePlanoView({
                   )
                 : "—"}
               {"  ·  "}
-              <span className="font-semibold text-foreground">Partida:</span>{" "}
+              <span className="font-semibold text-foreground">
+                Partida:
+              </span>{" "}
               {fimGeral
-                ? new Date(`${fimGeral}T00:00:00`).toLocaleDateString(
-                    "pt-BR",
-                  )
+                ? new Date(`${fimGeral}T00:00:00`).toLocaleDateString("pt-BR")
                 : "—"}
               {totalNoites ? `  ·  ${totalNoites} noites` : ""}
             </p>
             <p className="text-sm">
-              <span className="font-semibold text-foreground">
-                Viajantes:
-              </span>{" "}
+              <span className="font-semibold text-foreground">Viajantes:</span>{" "}
               {totalAdultos} adulto{totalAdultos === 1 ? "" : "s"}
               {totalCriancas > 0
                 ? `, ${totalCriancas} criança${totalCriancas === 1 ? "" : "s"}`
@@ -1879,7 +1891,9 @@ function DetalhePlanoView({
           const itensDoDestino = planoAtual.itinerario
             .filter((item) => item.destinoSlug === selecao.destinoSlug)
             .sort((a, b) =>
-              a.dia !== b.dia ? a.dia - b.dia : a.horario.localeCompare(b.horario),
+              a.dia !== b.dia
+                ? a.dia - b.dia
+                : a.horario.localeCompare(b.horario),
             );
           if (itensDoDestino.length === 0) return null;
 
@@ -1934,12 +1948,26 @@ function DetalhePlanoView({
                       </p>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">
-                        {item.local}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-foreground">
+                          {item.local}
+                        </p>
+                        {item.avaliacao != null && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                            <Star className="h-3 w-3 fill-current" />
+                            {item.avaliacao.toFixed(1)} no Google Maps
+                          </span>
+                        )}
+                      </div>
                       {item.endereco && (
                         <p className="text-xs text-muted-foreground">
                           {item.endereco}
+                        </p>
+                      )}
+                      {item.proximidadeDe && (
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Compass className="h-3 w-3 shrink-0" />
+                          {item.proximidadeDe}
                         </p>
                       )}
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -2494,9 +2522,7 @@ function DetalhePlanoView({
                     .filter((e): e is (typeof experiencias)[number] => !!e);
 
                   const interessesUnicos = Array.from(
-                    new Set(
-                      plano.selecoes.flatMap((s) => s.interesses ?? []),
-                    ),
+                    new Set(plano.selecoes.flatMap((s) => s.interesses ?? [])),
                   );
 
                   return (
@@ -2773,7 +2799,9 @@ function DetalhePlanoView({
                                     </span>
                                     <Link
                                       to="/pagamentos/$pagamentoId"
-                                      params={{ pagamentoId: `${planoAtual.id}:sinal` }}
+                                      params={{
+                                        pagamentoId: `${planoAtual.id}:sinal`,
+                                      }}
                                       className="text-xs font-semibold uppercase tracking-wide text-primary hover:underline"
                                     >
                                       Ver detalhes do pagamento
@@ -2816,7 +2844,9 @@ function DetalhePlanoView({
                                     </span>
                                     <Link
                                       to="/pagamentos/$pagamentoId"
-                                      params={{ pagamentoId: `${planoAtual.id}:pacote` }}
+                                      params={{
+                                        pagamentoId: `${planoAtual.id}:pacote`,
+                                      }}
                                       className="text-xs font-semibold uppercase tracking-wide text-primary hover:underline"
                                     >
                                       Ver detalhes do pagamento
@@ -2825,7 +2855,9 @@ function DetalhePlanoView({
                                 ) : (
                                   <button
                                     type="button"
-                                    onClick={() => setStepConsulta("itinerario")}
+                                    onClick={() =>
+                                      setStepConsulta("itinerario")
+                                    }
                                     className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
                                   >
                                     Ver programação da viagem
@@ -2946,8 +2978,8 @@ function DetalhePlanoView({
                     <p className="mt-2 text-sm text-muted-foreground">
                       O pré-fechamento: toda a viagem, dia a dia, com
                       restaurantes, tipo de refeição, horários e duração
-                      prevista de cada atividade. Confira tudo antes de
-                      fechar o pacote.
+                      prevista de cada atividade. Confira tudo antes de fechar o
+                      pacote.
                     </p>
                   </div>
 
@@ -3014,7 +3046,9 @@ function DetalhePlanoView({
                             Baixar PDF com detalhes do pagamento
                           </button>
                           <a
-                            href={planoAtual.pacotePagamentoDetalhes.notaFiscalUrl}
+                            href={
+                              planoAtual.pacotePagamentoDetalhes.notaFiscalUrl
+                            }
                             target="_blank"
                             rel="noreferrer"
                             download="nota-fiscal.html"
@@ -3072,8 +3106,8 @@ function DetalhePlanoView({
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     Recebemos o pagamento e sua viagem está garantida. Nossa
-                    equipe segue à disposição pra qualquer ajuste até a data
-                    da partida.
+                    equipe segue à disposição pra qualquer ajuste até a data da
+                    partida.
                   </p>
                   <button
                     type="button"
@@ -3088,7 +3122,6 @@ function DetalhePlanoView({
                   </button>
                 </div>
               )}
-
             </div>
 
             {/* Relatório completo pra impressão/PDF — só aparece ao imprimir. */}
@@ -3141,7 +3174,9 @@ function DetalhePlanoView({
                     <dd className="font-semibold">
                       {planoAtual.pacotePagamentoDetalhes.metodo}
                     </dd>
-                    <dt className="text-muted-foreground">Dados do pagamento</dt>
+                    <dt className="text-muted-foreground">
+                      Dados do pagamento
+                    </dt>
                     <dd className="font-semibold">
                       {planoAtual.pacotePagamentoDetalhes.dadosMascarados}
                     </dd>
@@ -3151,9 +3186,7 @@ function DetalhePlanoView({
                     <dd className="font-semibold">
                       {planoAtual.pacotePagamentoDetalhes.codigoConfirmacao}
                     </dd>
-                    <dt className="text-muted-foreground">
-                      Código de retorno
-                    </dt>
+                    <dt className="text-muted-foreground">Código de retorno</dt>
                     <dd className="font-semibold">
                       {planoAtual.pacotePagamentoDetalhes.codigoRetorno}
                     </dd>
