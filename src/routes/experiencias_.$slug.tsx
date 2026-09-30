@@ -3,12 +3,16 @@ import {
   ArrowLeft,
   Calendar,
   ListChecks,
-  MapPin,
   Shield,
   Sparkles,
   Users,
 } from "lucide-react";
 
+import {
+  CarrosselHorizontal,
+  cartaoCarrosselClassName,
+  ConteudoCartaoOverlay,
+} from "@/components/CarrosselHorizontal";
 import { WhatsappButton } from "@/components/WhatsappButton";
 import { getExperiencia, getDestinosPorExperiencia } from "@/data/experiencias";
 
@@ -156,35 +160,25 @@ function ExperienciaPage() {
           </div>
 
           {destinos.length > 0 ? (
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {destinos.map((item) => (
-                <Link
-                  key={`${item.destinoSlug}-${item.atracaoNome}`}
-                  to="/destinos/$slug"
-                  params={{ slug: item.destinoSlug }}
-                  className="group relative overflow-hidden rounded-2xl"
-                >
-                  <img
-                    src={item.imagem}
-                    alt={item.alt}
-                    className="aspect-[4/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-forest-900/80 via-forest-900/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-sand-50">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-800/70 px-3 py-1 text-xs font-medium uppercase tracking-wide backdrop-blur-sm">
-                      <MapPin className="h-3 w-3" />
-                      {item.destinoNome}
-                    </span>
-                    <h3 className="mt-2 font-display text-2xl">
-                      {item.atracaoNome}
-                    </h3>
-                    <p className="mt-1 text-sm text-forest-100">
-                      {item.descricao}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+            <div className="mt-12">
+              <CarrosselHorizontal>
+                {destinos.map((item) => (
+                  <Link
+                    key={`${item.destinoSlug}-${item.atracaoNome}`}
+                    to="/destinos/$slug"
+                    params={{ slug: item.destinoSlug }}
+                    className={cartaoCarrosselClassName}
+                  >
+                    <ConteudoCartaoOverlay
+                      titulo={item.atracaoNome}
+                      subtitulo={item.destinoNome}
+                      descricao={item.descricao}
+                      imagem={item.imagem}
+                      alt={item.alt}
+                    />
+                  </Link>
+                ))}
+              </CarrosselHorizontal>
             </div>
           ) : (
             <p className="mx-auto mt-8 max-w-xl text-balance text-center text-muted-foreground">
