@@ -136,27 +136,27 @@ function DestinoRoteiroPage() {
                 O que você vive em {destino.nome.split(",")[0]}
               </h2>
             </div>
+          </div>
 
-            <div className="mt-12">
-              <CarrosselHorizontal>
-                {experiencias.map((exp) => (
-                  <Link
-                    key={exp.slug}
-                    to="/experiencias/$slug"
-                    params={{ slug: exp.slug }}
-                    className={cartaoCarrosselClassName}
-                  >
-                    <ConteudoCartaoOverlay
-                      titulo={exp.titulo}
-                      descricao={exp.descricao}
-                      imagem={exp.imagem}
-                      alt={exp.alt}
-                      icon={exp.icon}
-                    />
-                  </Link>
-                ))}
-              </CarrosselHorizontal>
-            </div>
+          <div className="mt-12">
+            <CarrosselHorizontal>
+              {experiencias.map((exp) => (
+                <Link
+                  key={exp.slug}
+                  to="/experiencias/$slug"
+                  params={{ slug: exp.slug }}
+                  className={cartaoCarrosselClassName}
+                >
+                  <ConteudoCartaoOverlay
+                    titulo={exp.titulo}
+                    descricao={exp.descricao}
+                    imagem={exp.imagem}
+                    alt={exp.alt}
+                    icon={exp.icon}
+                  />
+                </Link>
+              ))}
+            </CarrosselHorizontal>
           </div>
         </section>
       )}
@@ -171,30 +171,32 @@ function DestinoRoteiroPage() {
               Principais pontos do roteiro
             </h2>
           </div>
+        </div>
 
-          <div className="mt-12">
-            <CarrosselHorizontal>
-              {destino.atracoes.map((atracao) => (
-                <div key={atracao.nome} className={cartaoCarrosselClassName}>
-                  <ConteudoCartaoOverlay
-                    titulo={atracao.nome}
-                    descricao={atracao.descricao}
-                    imagem={atracao.imagem}
-                    alt={atracao.alt}
-                  />
-                </div>
-              ))}
-            </CarrosselHorizontal>
-          </div>
+        <div className="mt-12">
+          <CarrosselHorizontal>
+            {destino.atracoes.map((atracao) => (
+              <div key={atracao.nome} className={cartaoCarrosselClassName}>
+                <ConteudoCartaoOverlay
+                  titulo={atracao.nome}
+                  descricao={atracao.descricao}
+                  imagem={atracao.imagem}
+                  alt={atracao.alt}
+                />
+              </div>
+            ))}
+          </CarrosselHorizontal>
+        </div>
 
-          {destino.totalAtracoes && (
+        {destino.totalAtracoes && (
+          <div className="container-tight">
             <p className="mx-auto mt-16 max-w-2xl text-balance text-center font-display text-xl leading-snug text-forest-800 md:text-2xl">
               E olha que isso é só o começo: {destino.nome.split(",")[0]} tem
               mais de {destino.totalAtracoes} atrações — no seu roteiro, a gente
               destaca as principais para o tempo que você tiver.
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <section className="section-padding bg-forest-900 text-sand-50">
