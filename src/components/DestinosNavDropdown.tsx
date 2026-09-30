@@ -68,8 +68,11 @@ export function DestinosNavDropdown({
   transparente?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
-  const [paisAtivo, setPaisAtivo] = useState(GRUPOS[0]?.pais);
-  const [estadoAtivo, setEstadoAtivo] = useState(GRUPOS[0]?.estados[0]?.sigla);
+  // undefined = nada em foco ainda: a coluna de estados só aparece ao
+  // passar o mouse num país, e a de cidades só ao passar o mouse num
+  // estado — nada fica pré-selecionado por padrão.
+  const [paisAtivo, setPaisAtivo] = useState<string | undefined>(undefined);
+  const [estadoAtivo, setEstadoAtivo] = useState<string | undefined>(undefined);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const ref = useRef<HTMLDivElement>(null);
   const isActive = pathname.startsWith("/destinos");
@@ -84,6 +87,15 @@ export function DestinosNavDropdown({
     document.addEventListener("mousedown", handleClickFora);
     return () => document.removeEventListener("mousedown", handleClickFora);
   }, [mobile]);
+
+  // Cada vez que o menu fecha, esquece o que estava em foco — reabrir
+  // começa sempre só com a coluna de países, igual a primeira vez.
+  useEffect(() => {
+    if (!aberto) {
+      setPaisAtivo(undefined);
+      setEstadoAtivo(undefined);
+    }
+  }, [aberto]);
 
   /**
    * Lista de estados > cidades de UM país, empilhados — usada só no menu
@@ -151,7 +163,7 @@ export function DestinosNavDropdown({
 
   function selecionarPais(pais: string) {
     setPaisAtivo(pais);
-    setEstadoAtivo(GRUPOS.find((g) => g.pais === pais)?.estados[0]?.sigla);
+    setEstadoAtivo(undefined);
   }
 
   if (mobile) {
@@ -185,10 +197,10 @@ export function DestinosNavDropdown({
     );
   }
 
-  const grupoPaisAtivo = GRUPOS.find((g) => g.pais === paisAtivo) ?? GRUPOS[0];
-  const grupoEstadoAtivo =
-    grupoPaisAtivo?.estados.find((e) => e.sigla === estadoAtivo) ??
-    grupoPaisAtivo?.estados[0];
+  const grupoPaisAtivo = GRUPOS.find((g) => g.pais === paisAtivo);
+  const grupoEstadoAtivo = grupoPaisAtivo?.estados.find(
+    (e) => e.sigla === estadoAtivo,
+  );
 
   return (
     <div ref={ref} className="relative">
@@ -213,8 +225,10 @@ export function DestinosNavDropdown({
 
       {aberto && (
         <div className="absolute left-0 top-full mt-2 flex overflow-hidden rounded-xl bg-white/95 shadow-lg backdrop-blur-sm">
-          {/* Coluna dos países — hover troca o que aparece na coluna do meio, igual ao menu do concorrente. */}
-          <div className="w-32 shrink-0 space-y-0.5 border-r border-border p-3">
+          {/* Coluna dos países — hover revela a coluna de estados, igual ao menu do concorrente. Nada pré-selecionado. */}
+          <div
+            className={`w-32 shrink-0 space-y-0.5 p-3 ${grupoPaisAtivo ? "border-r border-border" : ""}`}
+          >
             {GRUPOS.map((grupoPais) => (
               <button
                 key={grupoPais.pais}
@@ -232,28 +246,35 @@ export function DestinosNavDropdown({
             ))}
           </div>
 
-          {/* Coluna dos estados — mesmo comportamento: hover troca a coluna de cidades. */}
-          <div className="w-40 shrink-0 space-y-0.5 border-r border-border p-3">
-            {grupoPaisAtivo?.estados.map((grupoEstado) => (
-              <button
-                key={grupoEstado.sigla}
-                type="button"
-                onMouseEnter={() => setEstadoAtivo(grupoEstado.sigla)}
-                onClick={() => setEstadoAtivo(grupoEstado.sigla)}
-                className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
-                  grupoEstadoAtivo?.sigla === grupoEstado.sigla
-                    ? "bg-[#009739]/10 text-[#009739]"
-                    : "text-[#009739]/70 hover:bg-[#009739]/10 hover:text-[#009739]"
-                }`}
-              >
-                {grupoEstado.estado}
-              </button>
-            ))}
-          </div>
+          {/* Coluna dos estados — só aparece com um país em foco; hover revela a coluna de cidades. */}
+          {grupoPaisAtivo && (
+            <div
+              className={`w-40 shrink-0 space-y-0.5 p-3 ${grupoEstadoAtivo ? "border-r border-border" : ""}`}
+            >
+              {grupoPaisAtivo.estados.map((grupoEstado) => (
+                <button
+                  key={grupoEstado.sigla}
+                  type="button"
+                  onMouseEnter={() => setEstadoAtivo(grupoEstado.sigla)}
+                  onClick={() => setEstadoAtivo(grupoEstado.sigla)}
+                  className={`block w-full rounded px-2 py-1.5 text-left text-sm font-medium transition-colors ${
+                    grupoEstadoAtivo?.sigla === grupoEstado.sigla
+                      ? "bg-[#009739]/10 text-[#009739]"
+                      : "text-[#009739]/70 hover:bg-[#009739]/10 hover:text-[#009739]"
+                  }`}
+                >
+                  {grupoEstado.estado}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="w-40 p-3">
-            {renderCidades(grupoEstadoAtivo, () => setAberto(false))}
-          </div>
+          {/* Coluna das cidades — só aparece com um estado em foco. */}
+          {grupoEstadoAtivo && (
+            <div className="w-40 p-3">
+              {renderCidades(grupoEstadoAtivo, () => setAberto(false))}
+            </div>
+          )}
         </div>
       )}
     </div>
