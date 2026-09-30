@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 
 /**
@@ -13,15 +13,16 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  * indevida no rodapé). Usando `100%` (da própria section, que já é
  * full-width) esse problema não existe.
  *
- * O wrapper usa `w-fit` (limitado a `max-w-full`), não `w-full`: com
- * poucos cards (que não preenchem a largura disponível), isso encolhe o
- * carrossel até o conteúdo de verdade, então as setas ficam coladas nas
- * extremidades dos cards visíveis, em vez de flutuarem longe deles num
- * espaço vazio. Com cards suficientes pra encher o espaço, o `max-w-full`
- * garante que ele ainda ocupa toda a largura disponível, mantendo o
- * scroll interno normalmente.
+ * O wrapper é sempre `w-full`: o carrossel ocupa a largura inteira
+ * disponível e as setas ficam sempre coladas nas extremidades da tela
+ * (ou da section), mesmo com um único card — nunca encolhe pra virar uma
+ * ilha centralizada no meio da tela. (Uma versão anterior usava `w-fit`
+ * pra "colar" as setas nos cards quando havia poucos — mas isso fazia o
+ * carrossel inteiro encolher e centralizar no meio da section em vez de
+ * ocupar a extensão da tela, o problema oposto. A combinação certa é
+ * largura cheia + gutter pequeno e fixo, não encolher o container.)
  *
- * `scroll-px-*` (espelhando o `px-*`) evita outro efeito colateral do
+ * `scroll-px-*` (espelhando o `px-*`) evita um efeito colateral do
  * scroll-snap: sem isso, o navegador alinha o scroll inicial direto no
  * primeiro card, "comendo" o respiro do padding — invisível quando o card
  * é uma imagem que já vai até a borda, mas expõe a seta por cima do
@@ -37,6 +38,32 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
  */
 export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   const trilhaRef = useRef<HTMLDivElement>(null);
+  const [podeVoltar, setPodeVoltar] = useState(false);
+  const [podeAvancar, setPodeAvancar] = useState(false);
+
+  // Sem conteúdo suficiente pra rolar (poucos cards, ou já na ponta), a
+  // seta correspondente fica desabilitada em vez de não fazer nada —
+  // sinaliza que não tem mais pra onde ir, em vez de parecer quebrada.
+  useEffect(() => {
+    const trilha = trilhaRef.current;
+    if (!trilha) return;
+
+    function atualizarEstado() {
+      const el = trilhaRef.current;
+      if (!el) return;
+      setPodeVoltar(el.scrollLeft > 4);
+      setPodeAvancar(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }
+
+    atualizarEstado();
+    trilha.addEventListener("scroll", atualizarEstado, { passive: true });
+    const observer = new ResizeObserver(atualizarEstado);
+    observer.observe(trilha);
+    return () => {
+      trilha.removeEventListener("scroll", atualizarEstado);
+      observer.disconnect();
+    };
+  }, []);
 
   function rolar(direcao: 1 | -1) {
     const trilha = trilhaRef.current;
@@ -49,7 +76,7 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative mx-auto w-fit max-w-full">
+    <div className="relative w-full">
       <div
         ref={trilhaRef}
         className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-12 pb-2 scroll-px-12 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-16 sm:scroll-px-16 [&::-webkit-scrollbar]:hidden"
@@ -60,16 +87,18 @@ export function CarrosselHorizontal({ children }: { children: ReactNode }) {
       <button
         type="button"
         onClick={() => rolar(-1)}
+        disabled={!podeVoltar}
         aria-label="Ver anterior"
-        className="absolute left-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary sm:left-4 sm:p-2"
+        className="absolute left-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary disabled:cursor-default disabled:opacity-40 disabled:hover:bg-background sm:left-4 sm:p-2"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
       <button
         type="button"
         onClick={() => rolar(1)}
+        disabled={!podeAvancar}
         aria-label="Ver próximo"
-        className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary sm:right-4 sm:p-2"
+        className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 rounded-full border border-border bg-background p-1.5 text-foreground shadow-md transition-colors hover:bg-secondary disabled:cursor-default disabled:opacity-40 disabled:hover:bg-background sm:right-4 sm:p-2"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
