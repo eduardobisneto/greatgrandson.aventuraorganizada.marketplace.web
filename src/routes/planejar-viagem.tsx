@@ -1714,6 +1714,22 @@ function DetalhePlanoView({
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {item.local}
                 </p>
+                {/*
+                  Mesma foto do prestador (hospedagem, voo, refeição,
+                  atração) já mostrada em destaque na sugestão que o
+                  cliente aceitou na etapa 5 — aqui reaproveitada com o
+                  mesmo tratamento visual, pra programação final lembrar
+                  exatamente o que foi decidido na conversa, e não só um
+                  ícone genérico de linha do tempo.
+                */}
+                {item.imagem && (
+                  <img
+                    src={item.imagem}
+                    alt={item.local}
+                    className="mb-3 mt-2 aspect-[4/3] w-full max-w-xs rounded-2xl object-cover"
+                    loading="lazy"
+                  />
+                )}
                 <p className="mt-1 text-sm text-muted-foreground">
                   {item.descricao}
                 </p>
