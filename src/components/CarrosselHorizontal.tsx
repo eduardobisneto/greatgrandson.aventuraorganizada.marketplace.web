@@ -1,6 +1,12 @@
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { CSSProperties, ComponentType, ReactNode, SVGProps } from "react";
+import type {
+  CSSProperties,
+  ComponentType,
+  MouseEvent,
+  ReactNode,
+  SVGProps,
+} from "react";
 
 // useLayoutEffect mede e aplica o breakout antes do navegador pintar a
 // tela (evita um "pulo" visível do carrossel estreito pro full-bleed);
@@ -168,6 +174,13 @@ export const cartaoCarrosselClassName =
  * gradiente e título/descrição sobrepostos embaixo, no mesmo espírito do
  * Hero. Não inclui o wrapper (Link ou div) de propósito, pra quem chama
  * decidir se o card navega pra algum lugar ou não.
+ *
+ * Aceita uma foto só (`imagem`, como antes) ou várias (`imagens`): com mais
+ * de uma, ganha setas/pontos de navegação próprios, por cima da foto. Essa
+ * navegação é só por clique (nunca por arrasto) e sempre com
+ * `preventDefault`/`stopPropagation` — o card costuma estar dentro de um
+ * `<Link>` (ver DestinoCard, AtracoesGallery etc.), então sem isso tocar
+ * numa seta abriria o link por baixo.
  */
 export function ConteudoCartaoOverlay({
   titulo,
@@ -175,6 +188,7 @@ export function ConteudoCartaoOverlay({
   subtitulo,
   descricao,
   imagem,
+  imagens,
   alt,
   icon: Icon,
 }: {
@@ -182,14 +196,28 @@ export function ConteudoCartaoOverlay({
   subtitulo?: string | undefined;
   descricao: string;
   imagem?: string | undefined;
+  /** Quando presente (2+ itens), substitui `imagem` e vira um carrossel de fotos dentro do card. */
+  imagens?: string[] | undefined;
   alt?: string | undefined;
   icon?: ComponentType<SVGProps<SVGSVGElement>> | undefined;
 }) {
+  const fotos =
+    imagens && imagens.length > 0 ? imagens : imagem ? [imagem] : [];
+  const [indice, setIndice] = useState(0);
+  const temCarrossel = fotos.length > 1;
+  const fotoAtual = fotos[indice];
+
+  function navegar(e: MouseEvent, direcao: 1 | -1) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIndice((atual) => (atual + direcao + fotos.length) % fotos.length);
+  }
+
   return (
     <>
-      {imagem ? (
+      {fotoAtual ? (
         <img
-          src={imagem}
+          src={fotoAtual}
           alt={alt ?? titulo}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
@@ -198,8 +226,28 @@ export function ConteudoCartaoOverlay({
         <div className="absolute inset-0 bg-forest-800" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-forest-900/85 via-forest-900/30 to-transparent" />
-      {Icon && !imagem && (
+      {Icon && fotos.length === 0 && (
         <Icon className="absolute right-4 top-4 h-8 w-8 text-forest-500" />
+      )}
+      {temCarrossel && (
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <button
+            type="button"
+            aria-label="Foto anterior"
+            onClick={(e) => navegar(e, -1)}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-forest-900/50 text-sand-50 backdrop-blur-sm transition-colors hover:bg-forest-900/70"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Próxima foto"
+            onClick={(e) => navegar(e, 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-forest-900/50 text-sand-50 backdrop-blur-sm transition-colors hover:bg-forest-900/70"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       )}
       <div className="absolute bottom-0 left-0 right-0 p-5 text-sand-50">
         {subtitulo && (
@@ -210,6 +258,18 @@ export function ConteudoCartaoOverlay({
         )}
         <h3 className="font-display text-xl">{titulo}</h3>
         <p className="mt-1 text-sm text-forest-100">{descricao}</p>
+        {temCarrossel && (
+          <div className="mt-2 flex gap-1.5">
+            {fotos.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1 rounded-full transition-all ${
+                  i === indice ? "w-4 bg-sand-50" : "w-1 bg-sand-50/50"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
