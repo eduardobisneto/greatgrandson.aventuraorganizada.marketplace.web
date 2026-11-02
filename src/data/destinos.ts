@@ -47,6 +47,8 @@ export interface Destino {
   tagline: string;
   descricao: string;
   imagem: string;
+  /** Quando presente (2+ itens), o card do destino vira um carrossel de fotos. */
+  imagens?: string[];
   alt: string;
   duracao: string;
   grupo: string;
@@ -78,6 +80,7 @@ export const destinos: Destino[] = [
     descricao:
       "Roteiro completo por flutuações em rios de águas transparentes, grutas e cachoeiras na capital brasileira do ecoturismo.",
     imagem: destinoBonitoImg,
+    imagens: [destinoBonitoImg, flutuacaoImg],
     alt: "Rio de águas cristalinas cercado por vegetação em Bonito, MS",
     duracao: "4 dias / 3 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -159,6 +162,7 @@ export const destinos: Destino[] = [
     descricao:
       "Trilhas, tirolesas, rafting e cachoeiras a poucas horas de São Paulo, com estrutura completa para todos os níveis de aventura.",
     imagem: destinoSocorroImg,
+    imagens: [destinoSocorroImg, cachoeiraImg],
     alt: "Paisagem de montanhas e vegetação em Socorro, SP",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 20 pessoas",
@@ -249,6 +253,7 @@ export const destinos: Destino[] = [
     descricao:
       "Rafting, bóia-cross, tirolesas e cachoeiras em um dos points de esportes de aventura mais completos do interior paulista.",
     imagem: destinoBrotasImg,
+    imagens: [destinoBrotasImg, standUpPaddleImg, cachoeiraImg],
     alt: "Foto ilustrativa do destino Brotas, SP",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 20 pessoas",
@@ -323,6 +328,7 @@ export const destinos: Destino[] = [
     descricao:
       "Mais de 100 praias, trilhas na mata atlântica preservada e passeios de barco até ilhas e piscinas naturais no litoral norte de SP.",
     imagem: destinoUbatubaImg,
+    imagens: [destinoUbatubaImg, trilhaSetePraiasImg, surfItamambucaImg],
     alt: "Praia de areia clara cercada por mata atlântica e mar em Ubatuba, SP",
     duracao: "4 dias / 3 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -390,6 +396,7 @@ export const destinos: Destino[] = [
     descricao:
       "Roteiro de espeleologia por algumas das maiores cavernas do Brasil, entre trilhas e cachoeiras no coração da Mata Atlântica do Vale do Ribeira.",
     imagem: trilhasImg,
+    imagens: [trilhasImg, cachoeiraImg],
     alt: "Foto ilustrativa de trilha na Mata Atlântica",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 12 pessoas",
@@ -457,6 +464,7 @@ export const destinos: Destino[] = [
     descricao:
       "Roteiro pelas Cataratas do Iguaçu, um dos maiores espetáculos naturais do mundo, com trilhas, mirantes e passeio de barco até perto das quedas.",
     imagem: cachoeiraImg,
+    imagens: [cachoeiraImg, trilhasImg],
     alt: "Foto ilustrativa de queda d'água em meio à natureza",
     duracao: "4 dias / 3 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -533,6 +541,7 @@ export const destinos: Destino[] = [
     descricao:
       "Roteiro que combina relaxamento em águas termais e mineral com um dos principais points de paraquedismo do Brasil, no interior de São Paulo.",
     imagem: flutuacaoImg,
+    imagens: [flutuacaoImg, destinoSocorroImg],
     alt: "Foto ilustrativa de pessoas nadando em água cristalina",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -599,6 +608,7 @@ export const destinos: Destino[] = [
     descricao:
       "Roteiro na Serra da Bocaina, entre trilhas históricas, vinícolas de altitude e cerâmica artesanal, com clima de montanha o ano todo.",
     imagem: trilhasImg,
+    imagens: [trilhasImg, cachoeiraImg],
     alt: "Foto ilustrativa de trilha na Mata Atlântica",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -731,6 +741,12 @@ export const destinos: Destino[] = [
     descricao:
       "Praias de areia branca e água cristalina, dunas para andar de buggy e ilhas só acessíveis de barco na Região dos Lagos fluminense.",
     imagem: surfItamambucaImg,
+    imagens: [
+      surfItamambucaImg,
+      trilhaSetePraiasImg,
+      projetoTamarImg,
+      destinoUbatubaImg,
+    ],
     alt: "Foto ilustrativa de praia de areia branca com costão rochoso e mar azul-turquesa",
     duracao: "4 dias / 3 noites",
     grupo: "Grupos de até 15 pessoas",
@@ -809,6 +825,7 @@ export const destinos: Destino[] = [
     descricao:
       "Centro histórico colonial tombado pela UNESCO, ilhas e piscinas naturais só acessíveis de barco e cachoeiras na Mata Atlântica preservada.",
     imagem: projetoTamarImg,
+    imagens: [projetoTamarImg, trilhaSetePraiasImg, cachoeiraImg, trilhasImg],
     alt: "Foto ilustrativa de baía com mar calmo cercado por montanhas e Mata Atlântica",
     duracao: "3 dias / 2 noites",
     grupo: "Grupos de até 15 pessoas",
