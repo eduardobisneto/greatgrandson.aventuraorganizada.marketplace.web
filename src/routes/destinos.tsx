@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DestinoCard } from "@/components/DestinoCard";
-import { destinos } from "@/data/destinos";
+import { getDestinos } from "@/data/destinos";
 
 export const Route = createFileRoute("/destinos")({
+  loader: () => getDestinos(),
   component: DestinosPage,
 });
 
 function DestinosPage() {
+  const destinos = Route.useLoaderData();
   return (
     <>
       <section className="section-padding">

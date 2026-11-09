@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { RequireAuth } from "@/components/RequireAuth";
+import { getDestinos } from "@/data/destinos";
 import { useAuth } from "@/lib/auth-context";
 import {
   getPagamentosDoUsuario,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/trip-plan";
 
 export const Route = createFileRoute("/pagamentos")({
+  loader: () => getDestinos(),
   component: () => (
     <RequireAuth>
       <PagamentosPage />
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/pagamentos")({
 });
 
 function PagamentosPage() {
+  const destinos = Route.useLoaderData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
@@ -25,10 +28,11 @@ function PagamentosPage() {
   useEffect(() => {
     if (!user) return;
     function recalcular() {
-      if (user) setPagamentos(getPagamentosDoUsuario(user.id));
+      if (user) setPagamentos(getPagamentosDoUsuario(user.id, destinos));
     }
     recalcular();
     return onPlanosAtualizados(recalcular);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   function abrirPagamento(pagamento: Pagamento) {
@@ -45,9 +49,7 @@ function PagamentosPage() {
           <span className="text-sm font-semibold uppercase tracking-wider text-primary">
             Minha conta
           </span>
-          <h1 className="mt-3 text-balance text-3xl md:text-4xl">
-            Pagamentos
-          </h1>
+          <h1 className="mt-3 text-balance text-3xl md:text-4xl">Pagamentos</h1>
           <p className="mt-2 text-muted-foreground">
             Sinais e pagamentos de pacote das suas viagens.
           </p>
@@ -71,9 +73,7 @@ function PagamentosPage() {
                 className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-colors hover:border-primary"
               >
                 <div>
-                  <p className="font-display text-lg">
-                    {pagamento.descricao}
-                  </p>
+                  <p className="font-display text-lg">{pagamento.descricao}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     R$ {pagamento.valorReais.toLocaleString("pt-BR")} ·
                     Vencimento em{" "}
@@ -89,7 +89,9 @@ function PagamentosPage() {
                       : "bg-amber-100 text-amber-900"
                   }`}
                 >
-                  {pagamento.status === "pago" ? "Pago" : "Aguardando pagamento"}
+                  {pagamento.status === "pago"
+                    ? "Pago"
+                    : "Aguardando pagamento"}
                 </span>
               </button>
             ))}

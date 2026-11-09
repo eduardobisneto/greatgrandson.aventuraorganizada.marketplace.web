@@ -1,14 +1,45 @@
 /**
- * Modelo e persistência (mockada) do plano de viagem montado pelo cliente
- * final no fluxo de "Planejar viagem".
+ * Modelo e persistência do plano de viagem montado pelo cliente final no
+ * fluxo de "Planejar viagem".
  *
- * Hoje isso só grava no localStorage do navegador. Quando a
- * `cadastro.api` existir, o envio do resumo deve virar uma chamada real
- * pra ela (POST do plano), pra o analista da Aventura Organizada
- * conseguir ver e detalhar a proposta.
+ * O envio do plano (`salvarPlanoViagem`) e a leitura dos planos de um
+ * usuário (`getPlanosDoUsuario`) agora chamam a marketplace.api de
+ * verdade (POST/GET /api/planos-viagem — ver PlanosViagemController.cs,
+ * que repassa pra viagens.api), em vez de só gravar no localStorage.
+ *
+ * O RESTO do arquivo (conversa com o "analista", fila de sugestões,
+ * itinerário dia a dia, pagamentos) continua simulado 100% em
+ * localStorage, de propósito — a viagens.api ainda não expõe nenhum
+ * desses recursos (suggestões/interações/itinerário/pagamento), só a
+ * criação e a leitura básica do plano em si (ver `PlanoViagemRequest`/
+ * `PlanoViagemResponse` em marketplace.api.domain: nenhum desses campos
+ * existe lá). Rastrear esse estado localmente, por id de plano, segue
+ * sendo a única opção enquanto esse backend não existir — os
+ * comentários "mockado"/"simula" espalhados no resto do arquivo
+ * continuam valendo.
+ *
+ * ⚠️ Mismatch conhecido entre o modelo do wizard e `PlanoViagemRequest`:
+ * o wizard guarda data de início/fim, interesses, adultos/crianças e
+ * inclusos POR DESTINO (`SelecaoDestino`, viagem multi-destino), mas o
+ * DTO real da API tem um único `duracaoNoites`/`interesses`/`adultos`/
+ * `criancas`/`inclusos` pra todo o pedido, e `SelecaoDestinoRequest` só
+ * aceita uma única `data` (não um intervalo) por destino. O mapeamento
+ * em `montarPlanoViagemRequest` agrega esses campos (soma de noites e
+ * de pessoas, união de interesses/inclusos, primeira data de cada
+ * seleção) — é a melhor aproximação possível sem perder informação,
+ * mas vale checar com o time da viagens.api se o formato pretendido é
+ * mesmo esse agregado ou se o DTO ainda vai ganhar um nível por
+ * destino.
  */
 
-import { destinos } from "@/data/destinos";
+import type { Destino } from "@/data/destinos";
+import {
+  criarPlanoViagem,
+  getPlanosPorUsuario,
+  MarketplaceApiError,
+  type PlanoViagemRequestDto,
+  type PlanoViagemResponseDto,
+} from "@/lib/marketplace-api";
 import hospedagemImg from "@/assets/hospedagem.jpeg";
 import transporteImg from "@/assets/transporte.jpeg";
 
@@ -286,10 +317,91 @@ function readPlanos(): PlanoViagem[] {
   }
 }
 
-export function getPlanosDoUsuario(usuarioId: string): PlanoViagem[] {
-  return readPlanos()
-    .filter((plano) => plano.usuarioId === usuarioId)
-    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+/**
+ * Monta um registro mínimo pra um plano que a API conhece (GET
+ * /api/planos-viagem/usuario/{id}) mas que não tem registro local
+ * enriquecido — ex.: localStorage limpo, ou plano criado em outra
+ * sessão/dispositivo. Não tenta reconstruir a conversa simulada com o
+ * analista (perderia a narrativa real da etapa em que o plano está);
+ * mostra só os dados que a própria API devolve. `experienciaSlugs` fica
+ * vazio de propósito: a API só devolve ids, e resolvê-los de volta pra
+ * slug exigiria carregar todas as experiências — não vale o custo só
+ * pra um registro de exibição mínima.
+ */
+function montarRegistroMinimoDoRemoto(
+  remoto: PlanoViagemResponseDto,
+  destinos: Destino[],
+): PlanoViagem {
+  const porId = new Map(destinos.map((d) => [d.id, d]));
+  const selecoes: SelecaoDestino[] = remoto.selecoes.map((s) => ({
+    destinoSlug: porId.get(s.destinoId)?.slug ?? s.destinoId,
+    experienciaSlugs: [],
+    dataInicio: s.data ?? undefined,
+    dataFim: s.data ?? undefined,
+    interesses: remoto.interesses,
+    adultos: remoto.adultos,
+    criancas: remoto.criancas,
+    inclusos: remoto.inclusos,
+    contextoDestino: undefined,
+  }));
+
+  return {
+    id: remoto.id,
+    criadoEm: remoto.criadoEm,
+    usuarioId: remoto.usuarioId,
+    tipoInicial: "destinos",
+    selecoes,
+    contexto: remoto.contexto ?? "",
+    interacoes: [
+      // Os enums espelham os mesmos valores numéricos (ver EtapaPlanoViagemDto
+      // em marketplace-api.ts), só são tipos nominais diferentes em TS.
+      marcadorEtapa(
+        remoto.etapa as unknown as EtapaPlanoViagem,
+        remoto.criadoEm,
+      ),
+    ],
+    filaSugestoes: [],
+    sinalPago: false,
+    itinerario: [],
+    valorPacoteReais: calcularValorPacote(selecoes),
+    pacoteFechado: false,
+  };
+}
+
+/**
+ * Lista os planos do usuário. A EXISTÊNCIA dos planos agora vem da
+ * marketplace.api de verdade (GET /api/planos-viagem/usuario/{id}) — se
+ * essa chamada falhar (ex.: backend fora do ar), degrada pro que já
+ * estiver salvo localmente, em vez de mostrar a tela vazia/quebrada.
+ * Quando um plano existe nos dois lados, o registro local (com toda a
+ * conversa simulada) é o que é mostrado; quando só existe remotamente,
+ * mostra um registro mínimo (ver `montarRegistroMinimoDoRemoto`).
+ */
+export async function getPlanosDoUsuario(
+  usuarioId: string,
+  destinos: Destino[],
+): Promise<PlanoViagem[]> {
+  const locais = readPlanos().filter((p) => p.usuarioId === usuarioId);
+
+  let remotos: PlanoViagemResponseDto[] = [];
+  try {
+    remotos = await getPlanosPorUsuario(usuarioId);
+  } catch (err) {
+    if (!(err instanceof MarketplaceApiError)) throw err;
+    // Backend indisponível (ex.: cadeia identity.api/Cognito fake) —
+    // segue só com o que já existe localmente.
+  }
+
+  const porId = new Map(locais.map((p) => [p.id, p]));
+  for (const remoto of remotos) {
+    if (!porId.has(remoto.id)) {
+      porId.set(remoto.id, montarRegistroMinimoDoRemoto(remoto, destinos));
+    }
+  }
+
+  return Array.from(porId.values()).sort((a, b) =>
+    b.criadoEm.localeCompare(a.criadoEm),
+  );
 }
 
 // localStorage não é reativo — nada re-renderiza sozinho quando outro
@@ -453,7 +565,10 @@ function gerarNumeroVoo(destinoSlug: string, indice: number): string {
  * é o analista, no backoffice — isso aqui simula um roteiro plausível
  * enquanto esse backoffice não existe (ver `AtualizacaoBackoffice`).
  */
-function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
+function gerarFilaDeSugestoes(
+  selecoes: SelecaoDestino[],
+  destinos: Destino[],
+): SugestaoTemplate[] {
   const fila: SugestaoTemplate[] = [];
 
   // Viagem multi-destino: cada destino é tratado como um "pacote" próprio,
@@ -765,21 +880,88 @@ function gerarFilaDeSugestoes(selecoes: SelecaoDestino[]): SugestaoTemplate[] {
   return fila;
 }
 
-export function salvarPlanoViagem(
-  plano: Omit<
-    PlanoViagem,
-    | "id"
-    | "criadoEm"
-    | "interacoes"
-    | "filaSugestoes"
-    | "sinalPago"
-    | "itinerario"
-    | "valorPacoteReais"
-    | "pacoteFechado"
-  >,
+type NovoPlano = Omit<
+  PlanoViagem,
+  | "id"
+  | "criadoEm"
+  | "interacoes"
+  | "filaSugestoes"
+  | "sinalPago"
+  | "itinerario"
+  | "valorPacoteReais"
+  | "pacoteFechado"
+>;
+
+/**
+ * Converte as seleções do wizard (por slug) pro formato da API (por id)
+ * — ver mismatch documentado no cabeçalho do arquivo. Seleções cujo
+ * destino não é encontrado na lista carregada são ignoradas (não deveria
+ * acontecer: a lista vem do mesmo getDestinos() que alimentou o wizard).
+ */
+function montarPlanoViagemRequest(
+  plano: NovoPlano,
+  destinos: Destino[],
+): PlanoViagemRequestDto {
+  const porSlug = new Map(destinos.map((d) => [d.slug, d]));
+  const porSlugExperiencia = new Map(
+    destinos.flatMap((d) => d.experiencias.map((e) => [e.slug, e.id] as const)),
+  );
+
+  const selecoesValidas = plano.selecoes.filter((s) =>
+    porSlug.has(s.destinoSlug),
+  );
+
+  const duracaoNoites = selecoesValidas.reduce(
+    (total, s) => total + (noitesEntre(s.dataInicio, s.dataFim) ?? 0),
+    0,
+  );
+  const interesses = Array.from(
+    new Set(selecoesValidas.flatMap((s) => s.interesses)),
+  );
+  const inclusos = Array.from(
+    new Set(selecoesValidas.flatMap((s) => s.inclusos)),
+  );
+  const adultos = selecoesValidas.reduce((total, s) => total + s.adultos, 0);
+  const criancas = selecoesValidas.reduce((total, s) => total + s.criancas, 0);
+
+  return {
+    usuarioId: plano.usuarioId,
+    selecoes: selecoesValidas.map((s) => ({
+      destinoId: porSlug.get(s.destinoSlug)!.id,
+      experienciaIds: s.experienciaSlugs
+        .map((slug) => porSlugExperiencia.get(slug))
+        .filter((id): id is string => !!id),
+      data: s.dataInicio ?? null,
+    })),
+    duracaoNoites,
+    interesses,
+    contexto: plano.contexto || null,
+    adultos,
+    criancas,
+    inclusos,
+  };
+}
+
+/**
+ * Monta o registro local "enriquecido" (conversa simulada com o
+ * analista + fila de sugestões) a partir de um plano já criado — usado
+ * tanto por `salvarPlanoViagem` (plano novo, acabou de ser criado) como
+ * por `getPlanosDoUsuario` (plano que já existia na API mas sem registro
+ * local, ex.: localStorage limpo ou criado em outra sessão/dispositivo).
+ */
+function montarRegistroEnriquecido(
+  base: {
+    id: string;
+    criadoEm: string;
+    usuarioId: string;
+    tipoInicial: "destinos" | "experiencias";
+    selecoes: SelecaoDestino[];
+    contexto: string;
+  },
+  destinos: Destino[],
 ): PlanoViagem {
-  const agora = new Date().toISOString();
-  const fila = gerarFilaDeSugestoes(plano.selecoes);
+  const agora = base.criadoEm;
+  const fila = gerarFilaDeSugestoes(base.selecoes, destinos);
 
   // A etapa 5 abre com uma conversa comercial de verdade — nenhuma
   // sugestão aparece ainda. O analista dá boas-vindas, revisa o plano,
@@ -841,25 +1023,59 @@ export function salvarPlanoViagem(
     },
   ];
 
-  const registro: PlanoViagem = {
-    ...plano,
-    id: crypto.randomUUID(),
-    criadoEm: agora,
+  return {
+    id: base.id,
+    criadoEm: base.criadoEm,
+    usuarioId: base.usuarioId,
+    tipoInicial: base.tipoInicial,
+    selecoes: base.selecoes,
+    contexto: base.contexto,
     sinalPago: false,
     itinerario: [],
     filaSugestoes: fila,
-    valorPacoteReais: calcularValorPacote(plano.selecoes),
+    valorPacoteReais: calcularValorPacote(base.selecoes),
     pacoteFechado: false,
     interacoes,
   };
+}
 
-  const planos = readPlanos();
+function persistirRegistro(registro: PlanoViagem): void {
+  const planos = readPlanos().filter((p) => p.id !== registro.id);
   window.localStorage.setItem(
     PLANOS_KEY,
     JSON.stringify([...planos, registro]),
   );
   window.dispatchEvent(new Event(PLANOS_ATUALIZADOS_EVENT));
+}
 
+/**
+ * Envia o plano pra marketplace.api (POST /api/planos-viagem — vira um
+ * registro de verdade na viagens.api, visível pro analista no
+ * backoffice) e, com o id real devolvido pela API, monta e persiste
+ * localmente a conversa simulada com o analista (ver cabeçalho do
+ * arquivo pro porquê disso ainda ser local).
+ */
+export async function salvarPlanoViagem(
+  plano: NovoPlano,
+  destinos: Destino[],
+): Promise<PlanoViagem> {
+  const resposta = await criarPlanoViagem(
+    montarPlanoViagemRequest(plano, destinos),
+  );
+
+  const registro = montarRegistroEnriquecido(
+    {
+      id: resposta.id,
+      criadoEm: resposta.criadoEm,
+      usuarioId: plano.usuarioId,
+      tipoInicial: plano.tipoInicial,
+      selecoes: plano.selecoes,
+      contexto: plano.contexto,
+    },
+    destinos,
+  );
+
+  persistirRegistro(registro);
   return registro;
 }
 
@@ -1384,14 +1600,17 @@ export interface Pagamento {
  * existe um pagamento de pacote depois que a programação está completa
  * ("pacote_pronto").
  */
-function nomesDosDestinos(plano: PlanoViagem): string {
+function nomesDosDestinos(plano: PlanoViagem, destinos: Destino[]): string {
   return plano.selecoes
     .map((s) => destinos.find((d) => d.slug === s.destinoSlug)?.nome)
     .filter((n): n is string => !!n)
     .join(", ");
 }
 
-export function getPagamentosDoUsuario(usuarioId: string): Pagamento[] {
+export function getPagamentosDoUsuario(
+  usuarioId: string,
+  destinos: Destino[],
+): Pagamento[] {
   // Alguns planos foram pagos antes de o app registrar o meio de
   // pagamento — preenche esses casos legados com um registro honesto
   // (metodo "outro") antes de montar a lista, pra a tela de detalhe nunca
@@ -1400,7 +1619,7 @@ export function getPagamentosDoUsuario(usuarioId: string): Pagamento[] {
   const todosPlanos = readPlanos().map((plano) => {
     if (plano.usuarioId !== usuarioId) return plano;
     let atualizado = plano;
-    const descricaoDestino = nomesDosDestinos(plano) || "viagem";
+    const descricaoDestino = nomesDosDestinos(plano, destinos) || "viagem";
     if (plano.sinalPago && !plano.sinalPagamentoDetalhes) {
       atualizado = {
         ...atualizado,
@@ -1434,7 +1653,7 @@ export function getPagamentosDoUsuario(usuarioId: string): Pagamento[] {
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
 
   for (const plano of planosDoUsuario) {
-    const descricaoDestino = nomesDosDestinos(plano) || "viagem";
+    const descricaoDestino = nomesDosDestinos(plano, destinos) || "viagem";
 
     const pedidoSinal = plano.interacoes?.find(
       (i) => i.tipo === "plano_pronto",
@@ -1482,9 +1701,12 @@ export function getPagamentosDoUsuario(usuarioId: string): Pagamento[] {
 export function getPagamentoPorId(
   usuarioId: string,
   pagamentoId: string,
+  destinos: Destino[],
 ): Pagamento | null {
   return (
-    getPagamentosDoUsuario(usuarioId).find((p) => p.id === pagamentoId) ?? null
+    getPagamentosDoUsuario(usuarioId, destinos).find(
+      (p) => p.id === pagamentoId,
+    ) ?? null
   );
 }
 

@@ -6,17 +6,24 @@ import {
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
 import { PageHeroBanner } from "@/components/PageHeroBanner";
-import { experiencias } from "@/data/experiencias";
+import { getDestinos } from "@/data/destinos";
+import { getExperiencias } from "@/data/experiencias";
 
 export const Route = createFileRoute("/experiencias")({
+  loader: async () => ({
+    destinos: await getDestinos(),
+    experiencias: await getExperiencias(),
+  }),
   component: ExperienciasPage,
 });
 
 function ExperienciasPage() {
+  const { destinos, experiencias } = Route.useLoaderData();
   return (
     <>
       <PageHeroBanner
         seed="experiencias"
+        destinos={destinos}
         eyebrow="Experiências"
         titulo="Atividades que fazem parte dos nossos roteiros"
         descricao="De experiências tranquilas às mais emocionantes, montamos o pacote ideal para o seu grupo."

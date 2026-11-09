@@ -1,5 +1,4 @@
 import type { Destino } from "@/data/destinos";
-import { getExperienciasPorDestino } from "@/data/experiencias";
 
 /**
  * Copy comercial da experiência em destaque de um destino — título e
@@ -30,10 +29,11 @@ export function tituloExperiencia(destino: Destino): string {
 
 /** Descrição comercial a partir das principais atividades e atrações do destino, em vez do texto genérico. */
 export function descricaoExperiencia(destino: Destino): string {
-  // getExperienciasPorDestino ainda usa o nome antigo (Experiencia) na
-  // camada de dados — o rename pra Atividade em todo o sistema ainda
-  // não foi feito. Aqui já tratamos como atividade.
-  const atividadesTitulos = getExperienciasPorDestino(destino.slug)
+  // `destino.experiencias` já vem embutido na resposta da API (ver
+  // Destino.experiencias em marketplace.api) — o nome antigo
+  // "Experiencia" na camada de dados; o rename pra Atividade em todo o
+  // sistema ainda não foi feito. Aqui já tratamos como atividade.
+  const atividadesTitulos = destino.experiencias
     .slice(0, 3)
     .map((e) => e.titulo.toLowerCase());
   const atracoesNomes = destino.atracoes.slice(0, 3).map((a) => a.nome);

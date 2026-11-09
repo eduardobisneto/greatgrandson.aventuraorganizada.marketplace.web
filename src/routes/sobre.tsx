@@ -2,20 +2,24 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { WhatsappButton } from "@/components/WhatsappButton";
+import { getDestinos } from "@/data/destinos";
 import transporteImg from "@/assets/transporte.jpeg";
 import hospedagemImg from "@/assets/hospedagem.jpeg";
 import gastronomiaImg from "@/assets/download.jpeg";
 import culturaImg from "@/assets/destino-bonito.jpeg";
 
 export const Route = createFileRoute("/sobre")({
+  loader: () => getDestinos(),
   component: SobrePage,
 });
 
 function SobrePage() {
+  const destinos = Route.useLoaderData();
   return (
     <>
       <PageHeroBanner
         seed="sobre"
+        destinos={destinos}
         eyebrow="Sobre nós"
         titulo="Organizamos aventuras desde a saída de casa até a volta"
         descricao="A Aventura Organizada nasceu para tirar do papel viagens de turismo de aventura sem a dor de cabeça de planejar cada detalhe sozinho. Cuidamos da mobilidade, da estadia, das experiências gastronômicas e das experiências culturais e de entretenimento, para que você só precise aproveitar a viagem."

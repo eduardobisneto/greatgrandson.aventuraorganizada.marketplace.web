@@ -27,12 +27,8 @@ import {
 import { PagamentoModal } from "@/components/PagamentoModal";
 import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { RequireAuth } from "@/components/RequireAuth";
-import { destinos } from "@/data/destinos";
-import {
-  experiencias,
-  getDestinosPorExperiencia,
-  getExperienciasPorDestino,
-} from "@/data/experiencias";
+import { getDestinos, type Destino } from "@/data/destinos";
+import { getExperiencias, type Experiencia } from "@/data/experiencias";
 import { useAuth } from "@/lib/auth-context";
 import {
   adicionarInteracao,
@@ -61,6 +57,10 @@ export const Route = createFileRoute("/planejar-viagem")({
       typeof search["planoId"] === "string" ? search["planoId"] : undefined,
     step: typeof search["step"] === "string" ? search["step"] : undefined,
   }),
+  loader: async () => ({
+    destinos: await getDestinos(),
+    experiencias: await getExperiencias(),
+  }),
   component: () => (
     <RequireAuth>
       <PlanejarViagemPage />
@@ -86,6 +86,7 @@ const ADULTOS_PADRAO = 2;
 const CRIANCAS_PADRAO = 0;
 
 function PlanejarViagemPage() {
+  const { destinos, experiencias } = Route.useLoaderData();
   const { user } = useAuth();
   const search = Route.useSearch();
   const navigate = useNavigate();
@@ -126,19 +127,23 @@ function PlanejarViagemPage() {
 
   useEffect(() => {
     if (!user) return;
-    const doUsuario = getPlanosDoUsuario(user.id);
-    setPlanos(doUsuario);
-    setModo(doUsuario.length > 0 ? "lista" : "wizard");
+    getPlanosDoUsuario(user.id, destinos).then((doUsuario) => {
+      setPlanos(doUsuario);
+      setModo(doUsuario.length > 0 ? "lista" : "wizard");
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
     return onPedirListaDeViagens(() => {
-      setPlanos(getPlanosDoUsuario(user.id));
-      setPlanoSelecionado(null);
-      setModo("lista");
+      getPlanosDoUsuario(user.id, destinos).then((doUsuario) => {
+        setPlanos(doUsuario);
+        setPlanoSelecionado(null);
+        setModo("lista");
+      });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Deep link vindo da tela de Pagamentos: abre direto o plano e a etapa
@@ -179,7 +184,7 @@ function PlanejarViagemPage() {
 
   function verMeusPlanos() {
     if (!user) return;
-    setPlanos(getPlanosDoUsuario(user.id));
+    getPlanosDoUsuario(user.id, destinos).then(setPlanos);
     setPlanoSelecionado(null);
     setModo("lista");
   }
@@ -319,7 +324,10 @@ function PlanejarViagemPage() {
     });
   }
 
-  function handleEnviar() {
+  const [enviando, setEnviando] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+
+  async function handleEnviar() {
     if (!user) return;
 
     const selecoes: SelecaoDestino[] = destinosSelecionados.map((slug) => ({
@@ -335,14 +343,28 @@ function PlanejarViagemPage() {
       contextoDestino: contextoDestinoMap[slug] || undefined,
     }));
 
-    const criado = salvarPlanoViagem({
-      usuarioId: user.id,
-      tipoInicial: tipoInicial ?? "destinos",
-      selecoes,
-      contexto,
-    });
-
-    abrirPlano(criado);
+    setEnviando(true);
+    setErroEnvio(null);
+    try {
+      const criado = await salvarPlanoViagem(
+        {
+          usuarioId: user.id,
+          tipoInicial: tipoInicial ?? "destinos",
+          selecoes,
+          contexto,
+        },
+        destinos,
+      );
+      abrirPlano(criado);
+    } catch (err) {
+      setErroEnvio(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar o plano. Tente novamente.",
+      );
+    } finally {
+      setEnviando(false);
+    }
   }
 
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -364,6 +386,7 @@ function PlanejarViagemPage() {
       <ListaPlanosView
         nome={user?.nome.split(" ")[0] ?? ""}
         planos={planos}
+        destinos={destinos}
         onNovoPlanejamento={iniciarNovoPlanejamento}
         onAbrirPlano={abrirPlano}
       />
@@ -374,6 +397,8 @@ function PlanejarViagemPage() {
     return (
       <DetalhePlanoView
         plano={planoSelecionado}
+        destinos={destinos}
+        experiencias={experiencias}
         nomeUsuario={user?.nome.split(" ")[0] ?? ""}
         avatarUrlUsuario={user?.avatarUrl}
         stepInicial={stepInicialConsulta}
@@ -386,6 +411,7 @@ function PlanejarViagemPage() {
     <>
       <PageHeroBanner
         seed="planejar-viagem-novo"
+        destinos={destinos}
         eyebrow="Planejar viagem"
         titulo={`Vamos montar a sua aventura, ${user?.nome.split(" ")[0]}`}
       />
@@ -442,6 +468,8 @@ function PlanejarViagemPage() {
 
             {step === "selecao" && tipoInicial && (
               <SelecaoStep
+                destinos={destinos}
+                experiencias={experiencias}
                 tipoInicial={tipoInicial}
                 selecoesMap={selecoesMap}
                 onToggleDestino={toggleDestino}
@@ -456,6 +484,7 @@ function PlanejarViagemPage() {
 
             {step === "calendario" && (
               <CalendarioStep
+                destinos={destinos}
                 destinosSelecionados={destinosSelecionados}
                 destinoAtualIndex={destinoAtualIndex}
                 onIrParaDestino={setDestinoAtualIndex}
@@ -504,6 +533,8 @@ function PlanejarViagemPage() {
 
             {step === "resumo" && (
               <ResumoStep
+                destinos={destinos}
+                experiencias={experiencias}
                 destinosSelecionados={destinosSelecionados}
                 selecoesMap={selecoesMap}
                 datasInicio={datasInicio}
@@ -515,6 +546,8 @@ function PlanejarViagemPage() {
                 contextoDestinoMap={contextoDestinoMap}
                 onVoltar={() => irPara("calendario")}
                 onEnviar={handleEnviar}
+                enviando={enviando}
+                erro={erroEnvio}
               />
             )}
           </div>
@@ -561,6 +594,8 @@ function TipoStep({ onEscolher }: { onEscolher: (tipo: TipoInicial) => void }) {
 }
 
 function SelecaoStep({
+  destinos,
+  experiencias,
   tipoInicial,
   selecoesMap,
   onToggleDestino,
@@ -568,6 +603,8 @@ function SelecaoStep({
   onVoltar,
   onAvancar,
 }: {
+  destinos: Destino[];
+  experiencias: Experiencia[];
   tipoInicial: TipoInicial;
   selecoesMap: SelecoesMap;
   onToggleDestino: (slug: string) => void;
@@ -650,7 +687,7 @@ function SelecaoStep({
 
           {destinosEscolhidos.map((slug) => {
             const destino = destinos.find((d) => d.slug === slug);
-            const disponiveis = getExperienciasPorDestino(slug);
+            const disponiveis = destino?.experiencias ?? [];
             if (!destino) return null;
 
             return (
@@ -722,7 +759,9 @@ function SelecaoStep({
 
           {Array.from(experienciasEscolhidas).map((expSlug) => {
             const exp = experiencias.find((e) => e.slug === expSlug);
-            const destinosComExp = getDestinosPorExperiencia(expSlug);
+            const destinosComExp = destinos
+              .filter((d) => d.experiencias.some((e) => e.slug === expSlug))
+              .map((d) => ({ destinoSlug: d.slug, destinoNome: d.nome }));
             const destinosUnicos = Array.from(
               new Map(destinosComExp.map((d) => [d.destinoSlug, d])).values(),
             );
@@ -793,6 +832,7 @@ function SelecaoStep({
 }
 
 function CalendarioStep({
+  destinos,
   destinosSelecionados,
   destinoAtualIndex,
   onIrParaDestino,
@@ -814,6 +854,7 @@ function CalendarioStep({
   onVoltar,
   onAvancar,
 }: {
+  destinos: Destino[];
   destinosSelecionados: string[];
   destinoAtualIndex: number;
   onIrParaDestino: (index: number) => void;
@@ -1164,6 +1205,8 @@ function CalendarioStep({
 }
 
 function ResumoStep({
+  destinos,
+  experiencias,
   destinosSelecionados,
   selecoesMap,
   datasInicio,
@@ -1175,7 +1218,11 @@ function ResumoStep({
   contextoDestinoMap,
   onVoltar,
   onEnviar,
+  enviando,
+  erro,
 }: {
+  destinos: Destino[];
+  experiencias: Experiencia[];
   destinosSelecionados: string[];
   selecoesMap: SelecoesMap;
   datasInicio: Record<string, string>;
@@ -1187,6 +1234,8 @@ function ResumoStep({
   contextoDestinoMap: Record<string, string>;
   onVoltar: () => void;
   onEnviar: () => void;
+  enviando: boolean;
+  erro: string | null;
 }) {
   const experienciaSlugsUnicos = Array.from(
     new Set(
@@ -1308,11 +1357,18 @@ function ResumoStep({
         )}
       </div>
 
+      {erro && (
+        <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {erro}
+        </p>
+      )}
+
       <div className="flex flex-col items-center gap-4 border-t border-border pt-6 sm:flex-row sm:justify-between">
         <button
           type="button"
           onClick={onVoltar}
-          className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          disabled={enviando}
+          className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar
@@ -1320,10 +1376,15 @@ function ResumoStep({
         <button
           type="button"
           onClick={onEnviar}
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+          disabled={enviando}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
-          Enviar plano de viagem
-          <ArrowRight className="h-4 w-4" />
+          {enviando ? "Enviando..." : "Enviar plano de viagem"}
+          {enviando ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowRight className="h-4 w-4" />
+          )}
         </button>
       </div>
     </div>
@@ -1333,11 +1394,13 @@ function ResumoStep({
 function ListaPlanosView({
   nome,
   planos,
+  destinos,
   onNovoPlanejamento,
   onAbrirPlano,
 }: {
   nome: string;
   planos: PlanoViagem[];
+  destinos: Destino[];
   onNovoPlanejamento: () => void;
   onAbrirPlano: (plano: PlanoViagem) => void;
 }) {
@@ -1352,6 +1415,7 @@ function ListaPlanosView({
     <>
       <PageHeroBanner
         seed="minhas-viagens"
+        destinos={destinos}
         eyebrow="Minhas viagens"
         titulo={`Suas viagens, ${nome}`}
       >
@@ -1488,12 +1552,16 @@ function corDaEtapa(etapa: EtapaPlanoViagem): string {
 
 function DetalhePlanoView({
   plano,
+  destinos,
+  experiencias,
   nomeUsuario,
   avatarUrlUsuario,
   stepInicial,
   onVoltar,
 }: {
   plano: PlanoViagem;
+  destinos: Destino[];
+  experiencias: Experiencia[];
   nomeUsuario: string;
   avatarUrlUsuario?: string | undefined;
   stepInicial?: string | undefined;
@@ -2338,6 +2406,7 @@ function DetalhePlanoView({
       <div className="print:hidden">
         <PageHeroBanner
           seed={`plano-${plano.id}`}
+          destinos={destinos}
           eyebrow="Planejar viagem"
           titulo={`Viagem de ${nomeUsuario} para ${juntarNomes(nomesDestinos)}`}
           descricao={

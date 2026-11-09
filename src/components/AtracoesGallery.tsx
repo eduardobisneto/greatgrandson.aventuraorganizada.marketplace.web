@@ -5,14 +5,14 @@ import {
   cartaoCarrosselClassName,
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
-import { destinos } from "@/data/destinos";
+import type { Destino } from "@/data/destinos";
 
-/** Uma atração em destaque por destino — um recorte pra home, não o catálogo completo (esse fica na página do destino). */
-const principaisAtracoes = destinos
-  .filter((destino) => destino.atracoes.length > 0)
-  .map((destino) => ({ destino, atracao: destino.atracoes[0]! }));
+export function AtracoesGallery({ destinos }: { destinos: Destino[] }) {
+  // Uma atração em destaque por destino — um recorte pra home, não o catálogo completo (esse fica na página do destino).
+  const principaisAtracoes = destinos
+    .filter((destino) => destino.atracoes.length > 0)
+    .map((destino) => ({ destino, atracao: destino.atracoes[0]! }));
 
-export function AtracoesGallery() {
   return (
     <section className="section-padding">
       <div className="container-tight">

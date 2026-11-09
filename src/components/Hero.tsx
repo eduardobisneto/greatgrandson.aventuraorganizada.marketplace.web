@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 
-import { destinos } from "@/data/destinos";
+import type { Destino } from "@/data/destinos";
 import {
   descricaoExperiencia,
   tituloExperiencia,
@@ -10,20 +10,23 @@ import {
 
 const AUTO_PLAY_MS = 6000;
 
-export function Hero() {
+export function Hero({ destinos }: { destinos: Destino[] }) {
   const [index, setIndex] = useState(0);
-  const destino = destinos[index] ?? destinos[0]!;
 
   useEffect(() => {
     const id = setInterval(() => {
       setIndex((current) => (current + 1) % destinos.length);
     }, AUTO_PLAY_MS);
     return () => clearInterval(id);
-  }, []);
+  }, [destinos.length]);
 
   function goTo(next: number) {
     setIndex(((next % destinos.length) + destinos.length) % destinos.length);
   }
+
+  // Backend fora do ar / catálogo vazio — não tem destino pra girar no hero.
+  if (destinos.length === 0) return null;
+  const destino = destinos[index] ?? destinos[0]!;
 
   return (
     <section className="relative -mt-16 overflow-hidden">

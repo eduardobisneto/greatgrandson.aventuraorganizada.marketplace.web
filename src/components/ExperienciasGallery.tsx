@@ -5,9 +5,13 @@ import {
   cartaoCarrosselClassName,
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
-import { experiencias } from "@/data/experiencias";
+import type { Experiencia } from "@/data/experiencias";
 
-export function ExperienciasGallery() {
+export function ExperienciasGallery({
+  experiencias,
+}: {
+  experiencias: Experiencia[];
+}) {
   return (
     <section className="section-padding bg-sand-100">
       <div className="container-tight">

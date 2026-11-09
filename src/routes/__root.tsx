@@ -12,10 +12,22 @@ import { Footer } from "@/components/Footer";
 import { CookieConsent } from "@/components/CookieConsent";
 import { FloatingWhatsappButton } from "@/components/FloatingWhatsappButton";
 import { AuthProvider } from "@/lib/auth-context";
+import { getDestinos, type Destino } from "@/data/destinos";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
+    // Carregado uma vez pra toda a árvore de rotas — o Header (sempre
+    // visível) precisa da lista de destinos pro menu "Destinos" (ver
+    // DestinosNavDropdown). Se a marketplace.api estiver fora do ar, cai
+    // pra lista vazia em vez de quebrar a navegação do site inteiro.
+    loader: async (): Promise<{ destinos: Destino[] }> => {
+      try {
+        return { destinos: await getDestinos() };
+      } catch {
+        return { destinos: [] };
+      }
+    },
     head: () => ({
       meta: [
         { charSet: "utf-8" },
@@ -40,10 +52,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 );
 
 function RootComponent() {
+  const { destinos } = Route.useLoaderData();
   return (
     <RootDocument>
       <AuthProvider>
-        <Header />
+        <Header destinos={destinos} />
         {/*
           O header agora é fixed (flutua sobre o hero nas páginas que têm
           um banner full-bleed no topo — ver ehRotaComHeroNoTopo em
