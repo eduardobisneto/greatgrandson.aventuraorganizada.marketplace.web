@@ -5,18 +5,25 @@ import { Hero } from "@/components/Hero";
 import { OrganizacaoSection } from "@/components/OrganizacaoSection";
 import { ExperienciasGallery } from "@/components/ExperienciasGallery";
 import { WhatsappButton } from "@/components/WhatsappButton";
+import { getDestinos } from "@/data/destinos";
+import { getExperiencias } from "@/data/experiencias";
 
 export const Route = createFileRoute("/")({
+  loader: async () => ({
+    destinos: await getDestinos(),
+    experiencias: await getExperiencias(),
+  }),
   component: HomePage,
 });
 
 function HomePage() {
+  const { destinos, experiencias } = Route.useLoaderData();
   return (
     <>
-      <Hero />
+      <Hero destinos={destinos} />
       <OrganizacaoSection />
-      <ExperienciasGallery />
-      <AtracoesGallery />
+      <ExperienciasGallery experiencias={experiencias} />
+      <AtracoesGallery destinos={destinos} />
       <section className="section-padding bg-forest-900 text-sand-50">
         <div className="container-tight flex flex-col items-center gap-6 text-center">
           <h2 className="text-balance text-3xl md:text-4xl">

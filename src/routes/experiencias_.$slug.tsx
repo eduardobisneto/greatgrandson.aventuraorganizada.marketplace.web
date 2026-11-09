@@ -14,23 +14,26 @@ import {
   ConteudoCartaoOverlay,
 } from "@/components/CarrosselHorizontal";
 import { WhatsappButton } from "@/components/WhatsappButton";
+import { getDestinos } from "@/data/destinos";
 import { getExperiencia, getDestinosPorExperiencia } from "@/data/experiencias";
 
 export const Route = createFileRoute("/experiencias_/$slug")({
-  loader: ({ params }) => {
-    const experiencia = getExperiencia(params.slug);
+  loader: async ({ params }) => {
+    const [experiencia, todosDestinos] = await Promise.all([
+      getExperiencia(params.slug),
+      getDestinos(),
+    ]);
     if (!experiencia) throw notFound();
     return {
-      destinos: getDestinosPorExperiencia(params.slug),
+      experiencia,
+      destinos: await getDestinosPorExperiencia(params.slug, todosDestinos),
     };
   },
   component: ExperienciaPage,
 });
 
 function ExperienciaPage() {
-  const { slug } = Route.useParams();
-  const { destinos } = Route.useLoaderData();
-  const experiencia = getExperiencia(slug)!;
+  const { experiencia, destinos } = Route.useLoaderData();
   const Icon = experiencia.icon;
 
   return (

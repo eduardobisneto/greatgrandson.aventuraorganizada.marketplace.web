@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { DestinosNavDropdown } from "@/components/DestinosNavDropdown";
+import type { Destino } from "@/data/destinos";
 import { useAuth } from "@/lib/auth-context";
 import {
   getPlanosDoUsuario,
@@ -47,7 +48,7 @@ function ehRotaComHeroNoTopo(pathname: string): boolean {
   );
 }
 
-export function Header() {
+export function Header({ destinos }: { destinos: Destino[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -75,11 +76,24 @@ export function Header() {
     : "text-muted-foreground hover:text-foreground";
 
   useEffect(() => {
-    function recalcular() {
-      setTemViagens(!!user && getPlanosDoUsuario(user.id).length > 0);
+    let cancelado = false;
+    async function recalcular() {
+      if (!user) {
+        setTemViagens(false);
+        return;
+      }
+      const planos = await getPlanosDoUsuario(user.id, destinos).catch(
+        () => [],
+      );
+      if (!cancelado) setTemViagens(planos.length > 0);
     }
     recalcular();
-    return onPlanosAtualizados(recalcular);
+    const unsubscribe = onPlanosAtualizados(recalcular);
+    return () => {
+      cancelado = true;
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -128,7 +142,10 @@ export function Header() {
             Home
           </Link>
 
-          <DestinosNavDropdown transparente={transparente} />
+          <DestinosNavDropdown
+            destinos={destinos}
+            transparente={transparente}
+          />
 
           {navLinks.map((link) => {
             const isActive = pathname === link.to;
@@ -246,6 +263,7 @@ export function Header() {
               Home
             </Link>
             <DestinosNavDropdown
+              destinos={destinos}
               mobile
               onNavigate={() => setMobileOpen(false)}
             />

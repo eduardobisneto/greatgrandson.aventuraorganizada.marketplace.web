@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { destinos } from "@/data/destinos";
+import type { Destino } from "@/data/destinos";
 
 /**
  * Escolhe uma foto de destino pra ilustrar o banner de topo de páginas
@@ -12,7 +12,11 @@ import { destinos } from "@/data/destinos";
  * é determinística a partir de um `seed` (ex: o nome da página) — dá uma
  * imagem diferente por página, estável entre servidor e cliente.
  */
-function imagemPorSeed(seed: string): { imagem: string; alt: string } {
+function imagemPorSeed(
+  seed: string,
+  destinos: Destino[],
+): { imagem: string; alt: string } | null {
+  if (destinos.length === 0) return null;
   let hash = 0;
   for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 100000;
   const destino = destinos[hash % destinos.length]!;
@@ -28,23 +32,34 @@ function imagemPorSeed(seed: string): { imagem: string; alt: string } {
  */
 export function PageHeroBanner({
   seed,
+  destinos,
   eyebrow,
   titulo,
   descricao,
   children,
 }: {
   seed: string;
+  /** Pra escolher a foto de fundo (ver imagemPorSeed) — a rota que usa este componente carrega via getDestinos() no loader. */
+  destinos: Destino[];
   eyebrow: string;
   titulo: string;
   descricao?: string;
   children?: ReactNode;
 }) {
-  const { imagem, alt } = imagemPorSeed(seed);
+  const fundo = imagemPorSeed(seed, destinos);
 
   return (
     <section className="relative -mt-16 overflow-hidden">
       <div className="absolute inset-0">
-        <img src={imagem} alt={alt} className="h-full w-full object-cover" />
+        {fundo ? (
+          <img
+            src={fundo.imagem}
+            alt={fundo.alt}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full bg-forest-800" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-forest-900/90 via-forest-900/60 to-forest-900/30" />
       </div>
 

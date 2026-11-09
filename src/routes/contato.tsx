@@ -3,8 +3,10 @@ import { Instagram, Mail, Phone } from "lucide-react";
 
 import { PageHeroBanner } from "@/components/PageHeroBanner";
 import { WhatsappButton } from "@/components/WhatsappButton";
+import { getDestinos } from "@/data/destinos";
 
 export const Route = createFileRoute("/contato")({
+  loader: () => getDestinos(),
   component: ContatoPage,
 });
 
@@ -30,10 +32,12 @@ const canais = [
 ];
 
 function ContatoPage() {
+  const destinos = Route.useLoaderData();
   return (
     <>
       <PageHeroBanner
         seed="contato"
+        destinos={destinos}
         eyebrow="Contato"
         titulo="Vamos planejar a sua aventura"
         descricao="Fale com a gente pelo WhatsApp e monte um roteiro sob medida para o seu grupo em qualquer um dos nossos destinos."

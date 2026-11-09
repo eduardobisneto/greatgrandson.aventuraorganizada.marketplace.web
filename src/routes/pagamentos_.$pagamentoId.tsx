@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Clock, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { RequireAuth } from "@/components/RequireAuth";
+import { getDestinos } from "@/data/destinos";
 import { useAuth } from "@/lib/auth-context";
 import {
   getPagamentoPorId,
@@ -27,6 +28,7 @@ const INFORMACOES_LABEL: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/pagamentos_/$pagamentoId")({
+  loader: () => getDestinos(),
   component: () => (
     <RequireAuth>
       <DetalhePagamentoPage />
@@ -35,6 +37,7 @@ export const Route = createFileRoute("/pagamentos_/$pagamentoId")({
 });
 
 function DetalhePagamentoPage() {
+  const destinos = Route.useLoaderData();
   const { pagamentoId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -43,10 +46,11 @@ function DetalhePagamentoPage() {
   useEffect(() => {
     if (!user) return;
     function recalcular() {
-      if (user) setPagamento(getPagamentoPorId(user.id, pagamentoId));
+      if (user) setPagamento(getPagamentoPorId(user.id, pagamentoId, destinos));
     }
     recalcular();
     return onPlanosAtualizados(recalcular);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pagamentoId]);
 
   if (!pagamento) {
@@ -185,8 +189,8 @@ function DetalhePagamentoPage() {
                 )}
                 {pagamento.detalhes.metodo === "boleto" && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Pagamentos por boleto dependem de compensação bancária,
-                    que pode levar até 3 dias úteis.
+                    Pagamentos por boleto dependem de compensação bancária, que
+                    pode levar até 3 dias úteis.
                   </p>
                 )}
 
@@ -247,7 +251,8 @@ function DetalhePagamentoPage() {
                     to: "/planejar-viagem",
                     search: {
                       planoId: pagamento.planoId,
-                      step: pagamento.tipo === "sinal" ? "analise" : "pagamento",
+                      step:
+                        pagamento.tipo === "sinal" ? "analise" : "pagamento",
                     },
                   })
                 }

@@ -1,8 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { destinos, type Destino } from "@/data/destinos";
+import type { Destino } from "@/data/destinos";
 
 interface GrupoEstado {
   estado: string;
@@ -20,7 +20,7 @@ interface GrupoPais {
  * dos concorrentes do setor — hoje só temos Brasil, mas a estrutura já
  * comporta outros países quando existirem.
  */
-function agruparDestinos(): GrupoPais[] {
+function agruparDestinos(destinos: Destino[]): GrupoPais[] {
   const porPais = new Map<string, Map<string, GrupoEstado>>();
 
   for (const destino of destinos) {
@@ -51,22 +51,23 @@ function agruparDestinos(): GrupoPais[] {
     }));
 }
 
-const GRUPOS = agruparDestinos();
-
 function nomeCidade(nomeCompleto: string): string {
   return nomeCompleto.split(",")[0] ?? nomeCompleto;
 }
 
 export function DestinosNavDropdown({
+  destinos,
   mobile,
   onNavigate,
   transparente,
 }: {
+  destinos: Destino[];
   mobile?: boolean;
   onNavigate?: () => void;
   /** Header flutuando sobre um hero — texto claro, mesmo quando não ativo (variante desktop apenas). */
   transparente?: boolean;
 }) {
+  const GRUPOS = useMemo(() => agruparDestinos(destinos), [destinos]);
   const [aberto, setAberto] = useState(false);
   // undefined = nada em foco ainda: a coluna de estados só aparece ao
   // passar o mouse num país, e a de cidades só ao passar o mouse num

@@ -10,15 +10,14 @@ import {
 import { ExperienciaLightbox } from "@/components/ExperienciaLightbox";
 import { WhatsappButton } from "@/components/WhatsappButton";
 import { getDestino } from "@/data/destinos";
-import { getExperienciasPorDestino } from "@/data/experiencias";
 import {
   descricaoExperiencia,
   tituloExperiencia,
 } from "@/lib/experiencia-destaque";
 
 export const Route = createFileRoute("/destinos_/$slug")({
-  loader: ({ params }) => {
-    const destino = getDestino(params.slug);
+  loader: async ({ params }) => {
+    const destino = await getDestino(params.slug);
     if (!destino) throw notFound();
     return destino;
   },
@@ -27,7 +26,10 @@ export const Route = createFileRoute("/destinos_/$slug")({
 
 function DestinoRoteiroPage() {
   const destino = Route.useLoaderData();
-  const experiencias = getExperienciasPorDestino(destino.slug);
+  // Experiências em destaque do destino já vêm embutidas na resposta da
+  // API (ver Destino.experiencias em marketplace.api) — não precisa de
+  // mais uma chamada.
+  const experiencias = destino.experiencias;
   const mapsSrc = `https://www.google.com/maps?q=${encodeURIComponent(destino.mapsQuery)}&z=${destino.mapsZoom}&output=embed`;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
