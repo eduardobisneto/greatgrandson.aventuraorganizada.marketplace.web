@@ -10,10 +10,15 @@ import { getDestinos } from "@/data/destinos";
 import { getExperiencias } from "@/data/experiencias";
 
 export const Route = createFileRoute("/experiencias")({
-  loader: async () => ({
-    destinos: await getDestinos(),
-    experiencias: await getExperiencias(),
-  }),
+  // Cai pra listas vazias se a marketplace.api estiver fora do ar — mesmo
+  // padrão do __root.tsx pro menu.
+  loader: async () => {
+    const [destinos, experiencias] = await Promise.all([
+      getDestinos().catch(() => []),
+      getExperiencias().catch(() => []),
+    ]);
+    return { destinos, experiencias };
+  },
   component: ExperienciasPage,
 });
 
