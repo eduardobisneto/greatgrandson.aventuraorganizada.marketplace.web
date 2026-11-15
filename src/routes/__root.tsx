@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { Header } from "@/components/Header";
@@ -48,8 +49,43 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       ],
     }),
     component: RootComponent,
+    // Pego aqui como fallback pra qualquer rota filha que não define o seu
+    // próprio errorComponent — sem isso, um loader que lança (ex: API fora
+    // do ar) derruba a página inteira na tela genérica "Something went
+    // wrong!" do TanStack Router, sem header/footer. Header/Footer deste
+    // componente raiz continuam renderizando normalmente ao redor; só o
+    // conteúdo da rota que falhou é trocado por esta mensagem.
+    errorComponent: RotaComErro,
   },
 );
+
+function RotaComErro({ error, reset }: ErrorComponentProps) {
+  return (
+    <div className="section-padding">
+      <div className="container-tight flex flex-col items-center gap-4 text-center">
+        <h1 className="text-balance text-2xl md:text-3xl">
+          Não conseguimos carregar esta página
+        </h1>
+        <p className="max-w-md text-muted-foreground">
+          Pode ser uma instabilidade passageira na nossa API. Tente de novo em
+          alguns instantes.
+        </p>
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="inline-flex items-center justify-center rounded-full bg-forest-800 px-6 py-2.5 text-sm font-semibold text-sand-50 transition-colors hover:bg-forest-700"
+        >
+          Tentar de novo
+        </button>
+        {import.meta.env.DEV && (
+          <pre className="mt-4 max-w-full overflow-auto rounded-lg bg-secondary p-4 text-left text-xs text-muted-foreground">
+            {error instanceof Error ? error.message : String(error)}
+          </pre>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function RootComponent() {
   const { destinos } = Route.useLoaderData();

@@ -11,7 +11,9 @@ import {
 } from "@/lib/trip-plan";
 
 export const Route = createFileRoute("/pagamentos")({
-  loader: () => getDestinos(),
+  // Cai pra lista vazia se a marketplace.api estiver fora do ar — só é
+  // usada pra exibir o nome do destino, não é dado crítico da página.
+  loader: () => getDestinos().catch(() => []),
   component: () => (
     <RequireAuth>
       <PagamentosPage />

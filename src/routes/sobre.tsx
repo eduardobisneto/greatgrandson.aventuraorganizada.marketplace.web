@@ -9,7 +9,10 @@ import gastronomiaImg from "@/assets/download.jpeg";
 import culturaImg from "@/assets/destino-bonito.jpeg";
 
 export const Route = createFileRoute("/sobre")({
-  loader: () => getDestinos(),
+  // Cai pra lista vazia se a marketplace.api estiver fora do ar — o
+  // PageHeroBanner já tolera destinos=[] (cai pra um fundo sólido). Mesmo
+  // padrão do __root.tsx pro menu.
+  loader: () => getDestinos().catch(() => []),
   component: SobrePage,
 });
 

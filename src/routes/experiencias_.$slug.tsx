@@ -21,7 +21,7 @@ export const Route = createFileRoute("/experiencias_/$slug")({
   loader: async ({ params }) => {
     const [experiencia, todosDestinos] = await Promise.all([
       getExperiencia(params.slug),
-      getDestinos(),
+      getDestinos().catch(() => []),
     ]);
     if (!experiencia) throw notFound();
     return {

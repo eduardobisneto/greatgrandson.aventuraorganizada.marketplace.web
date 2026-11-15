@@ -4,7 +4,16 @@ import { DestinoCard } from "@/components/DestinoCard";
 import { getDestinos } from "@/data/destinos";
 
 export const Route = createFileRoute("/destinos")({
-  loader: () => getDestinos(),
+  // Lista vazia se a marketplace.api estiver fora do ar — uma página sem
+  // destinos é melhor do que a tela de erro genérica (mesmo padrão do
+  // __root.tsx pro menu).
+  loader: async () => {
+    try {
+      return await getDestinos();
+    } catch {
+      return [];
+    }
+  },
   component: DestinosPage,
 });
 
@@ -31,11 +40,18 @@ function DestinosPage() {
 
       <section className="section-padding bg-sand-100">
         <div className="container-tight">
-          <div className="grid gap-8 md:grid-cols-2">
-            {destinos.map((destino) => (
-              <DestinoCard key={destino.slug} {...destino} />
-            ))}
-          </div>
+          {destinos.length === 0 ? (
+            <p className="text-center text-muted-foreground">
+              Não foi possível carregar os destinos agora. Tente novamente em
+              alguns instantes.
+            </p>
+          ) : (
+            <div className="grid gap-8 md:grid-cols-2">
+              {destinos.map((destino) => (
+                <DestinoCard key={destino.slug} {...destino} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

@@ -6,7 +6,10 @@ import { WhatsappButton } from "@/components/WhatsappButton";
 import { getDestinos } from "@/data/destinos";
 
 export const Route = createFileRoute("/contato")({
-  loader: () => getDestinos(),
+  // Cai pra lista vazia se a marketplace.api estiver fora do ar — o
+  // PageHeroBanner já tolera destinos=[] (cai pra um fundo sólido). Mesmo
+  // padrão do __root.tsx pro menu.
+  loader: () => getDestinos().catch(() => []),
   component: ContatoPage,
 });
 
